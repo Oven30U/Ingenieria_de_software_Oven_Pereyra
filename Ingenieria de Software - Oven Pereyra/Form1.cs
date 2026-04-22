@@ -28,15 +28,17 @@ namespace Ingenieria_de_Software___Oven_Pereyra
         private void button1_Click(object sender, EventArgs e)
         {
             string rol = service.Login(textBox1.Text.Trim(), textBox2.Text.Trim());
+
             if (rol != null)
             {
                 MessageBox.Show($"Bienvenido, {textBox1.Text}!", "Acceso correcto",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                 textBox1.Visible = false;
                 textBox2.Visible = false;
                 button1.Visible = false;
                 button3.Visible = true;
-                button2.Visible = (rol == "admin");
+                button2.Visible = SesionManager.Instancia.EsAdmin();
             }
             else
             {
@@ -44,6 +46,7 @@ namespace Ingenieria_de_Software___Oven_Pereyra
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private void button2_Click(object sender, EventArgs e)
         {
@@ -53,6 +56,8 @@ namespace Ingenieria_de_Software___Oven_Pereyra
 
         private void button3_Click(object sender, EventArgs e)
         {
+            service.Logout(); // cierra la sesión en el Singleton
+
             textBox1.Clear();
             textBox2.Clear();
             textBox1.Visible = true;

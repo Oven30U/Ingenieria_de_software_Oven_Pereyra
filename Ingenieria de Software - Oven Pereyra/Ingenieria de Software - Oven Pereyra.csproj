@@ -60,6 +60,7 @@
     <Compile Include="Forms\FormABM.Designer.cs">
       <DependentUpon>FormABM.cs</DependentUpon>
     </Compile>
+    <Compile Include="Logica\SesionManager.cs" />
     <Compile Include="Logica\UsuarioService.cs" />
     <Compile Include="Modelos\Usuario.cs" />
     <Compile Include="Program.cs" />

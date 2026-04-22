@@ -184,5 +184,28 @@ namespace Ingenieria_de_Software___Oven_Pereyra.Datos
                 cmd.ExecuteNonQuery();
             }
         }
+
+        public Usuario ObtenerPorNombre(string nombreUsuario)
+        {
+            using (var con = new SqlConnection(connectionString))
+            {
+                con.Open();
+                var cmd = new SqlCommand(
+                    "SELECT Id, Usuario, Clave, Rol FROM Usuarios WHERE Usuario = @u", con);
+                cmd.Parameters.AddWithValue("@u", nombreUsuario);
+                var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    return new Usuario
+                    {
+                        Id = (int)reader["Id"],
+                        NombreUsuario = reader["Usuario"].ToString(),
+                        Clave = reader["Clave"].ToString(),
+                        Rol = reader["Rol"].ToString()
+                    };
+                }
+                return null;
+            }
+        }
     }
 }

@@ -14,7 +14,22 @@ namespace Ingenieria_de_Software___Oven_Pereyra.Logica
         {
             if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(clave))
                 return null;
-            return dao.Login(usuario, clave);
+
+            string rol = dao.Login(usuario, clave);
+
+            if (rol != null)
+            {
+                // Obtenemos el usuario completo para guardarlo en la sesión
+                var usuarioObj = dao.ObtenerPorNombre(usuario);
+                SesionManager.Instancia.IniciarSesion(usuarioObj);
+            }
+
+            return rol;
+        }
+
+        public void Logout()
+        {
+            SesionManager.Instancia.CerrarSesion();
         }
 
         public (bool ok, string mensaje) Agregar(string nombreUsuario, string clave, string rol = "usuario")
