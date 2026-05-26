@@ -1,4 +1,4 @@
-﻿namespace Ingenieria_de_Software___Oven_Pereyra.Forms
+﻿namespace UI
 {
     partial class FormABM
     {

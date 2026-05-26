@@ -1,4 +1,4 @@
-﻿namespace Ingenieria_de_Software___Oven_Pereyra.Modelos
+﻿namespace Mapper
 {
     public class Usuario
     {

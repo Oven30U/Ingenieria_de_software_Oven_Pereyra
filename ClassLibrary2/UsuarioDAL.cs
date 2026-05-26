@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Security.Cryptography;
 using System.Text;
-using Ingenieria_de_Software___Oven_Pereyra.Modelos;
+using Mapper;
 
-namespace Ingenieria_de_Software___Oven_Pereyra.Datos
+namespace DAL
 {
-    public class UsuarioDAO
+    public class UsuarioDAL
     {
         private string connectionString = System.Configuration.ConfigurationManager
             .ConnectionStrings["BaseDatos"].ConnectionString;

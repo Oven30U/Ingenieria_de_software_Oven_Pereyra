@@ -1,8 +1,9 @@
-﻿using System;
+﻿using DAL;
+using Ingenieria_de_Software___Oven_Pereyra;
+using System;
 using System.Windows.Forms;
-using Ingenieria_de_Software___Oven_Pereyra.Datos;
 
-namespace Ingenieria_de_Software___Oven_Pereyra
+namespace UI
 {
     internal static class Program
     {
@@ -11,10 +12,9 @@ namespace Ingenieria_de_Software___Oven_Pereyra
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
             try
             {
-                var dao = new UsuarioDAO();
+                var dao = new UsuarioDAL();
                 dao.InicializarBaseDatos();
             }
             catch (Exception ex)
@@ -23,7 +23,6 @@ namespace Ingenieria_de_Software___Oven_Pereyra
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
             Application.Run(new Form1());
         }
     }

@@ -1,6 +1,7 @@
-﻿using Ingenieria_de_Software___Oven_Pereyra.Modelos;
+﻿using Mapper;
 
-namespace Ingenieria_de_Software___Oven_Pereyra.Logica
+
+namespace BLL
 {
     public class SesionManager
     {

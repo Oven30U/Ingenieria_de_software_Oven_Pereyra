@@ -1,4 +1,4 @@
-﻿namespace Ingenieria_de_Software___Oven_Pereyra
+﻿namespace UI
 {
     partial class Form1
     {

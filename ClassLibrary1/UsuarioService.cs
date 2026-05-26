@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
-using Ingenieria_de_Software___Oven_Pereyra.Datos;
-using Ingenieria_de_Software___Oven_Pereyra.Modelos;
+using DAL;
+using Mapper;
 
-namespace Ingenieria_de_Software___Oven_Pereyra.Logica
+
+namespace BLL
 {
     public class UsuarioService
     {
-        private UsuarioDAO dao = new UsuarioDAO();
+        private UsuarioDAL dao = new UsuarioDAL();
 
         public List<Usuario> ObtenerTodos() => dao.ObtenerTodos();
 

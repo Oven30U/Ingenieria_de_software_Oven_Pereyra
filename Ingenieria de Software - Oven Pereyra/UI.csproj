@@ -47,7 +47,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Datos\UsuarioDAO.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -60,9 +59,6 @@
     <Compile Include="Forms\FormABM.Designer.cs">
       <DependentUpon>FormABM.cs</DependentUpon>
     </Compile>
-    <Compile Include="Logica\SesionManager.cs" />
-    <Compile Include="Logica\UsuarioService.cs" />
-    <Compile Include="Modelos\Usuario.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
@@ -94,7 +90,21 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="script_bd.sql" />
+    <Content Include="BE.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClassLibrary1\BLL.csproj">
+      <Project>{bd1356f0-2f1d-40e0-8d6a-3b6a6825d498}</Project>
+      <Name>BLL</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClassLibrary2\DAL.csproj">
+      <Project>{dccc3955-331d-4ac6-8b46-1fbefc49d91e}</Project>
+      <Name>DAL</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClassLibrary3\Mapper.csproj">
+      <Project>{e17689d1-de6e-4211-8664-b81d30bc874b}</Project>
+      <Name>Mapper</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

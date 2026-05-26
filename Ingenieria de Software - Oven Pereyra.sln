@@ -1,9 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.37203.1 d17.14
+VisualStudioVersion = 17.14.37203.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ingenieria de Software - Oven Pereyra", "Ingenieria de Software - Oven Pereyra\Ingenieria de Software - Oven Pereyra.csproj", "{3DC2222A-2A31-4105-9D22-9A7D9CB7B2A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UI", "Ingenieria de Software - Oven Pereyra\UI.csproj", "{3DC2222A-2A31-4105-9D22-9A7D9CB7B2A4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BD1356F0-2F1D-40E0-8D6A-3B6A6825D498} = {BD1356F0-2F1D-40E0-8D6A-3B6A6825D498}
+		{DCCC3955-331D-4AC6-8B46-1FBEFC49D91E} = {DCCC3955-331D-4AC6-8B46-1FBEFC49D91E}
+		{E17689D1-DE6E-4211-8664-B81D30BC874B} = {E17689D1-DE6E-4211-8664-B81D30BC874B}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLL", "ClassLibrary1\BLL.csproj", "{BD1356F0-2F1D-40E0-8D6A-3B6A6825D498}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL", "ClassLibrary2\DAL.csproj", "{DCCC3955-331D-4AC6-8B46-1FBEFC49D91E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mapper", "ClassLibrary3\Mapper.csproj", "{E17689D1-DE6E-4211-8664-B81D30BC874B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +26,18 @@ Global
 		{3DC2222A-2A31-4105-9D22-9A7D9CB7B2A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DC2222A-2A31-4105-9D22-9A7D9CB7B2A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3DC2222A-2A31-4105-9D22-9A7D9CB7B2A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD1356F0-2F1D-40E0-8D6A-3B6A6825D498}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD1356F0-2F1D-40E0-8D6A-3B6A6825D498}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD1356F0-2F1D-40E0-8D6A-3B6A6825D498}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD1356F0-2F1D-40E0-8D6A-3B6A6825D498}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCCC3955-331D-4AC6-8B46-1FBEFC49D91E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCCC3955-331D-4AC6-8B46-1FBEFC49D91E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCCC3955-331D-4AC6-8B46-1FBEFC49D91E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCCC3955-331D-4AC6-8B46-1FBEFC49D91E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E17689D1-DE6E-4211-8664-B81D30BC874B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E17689D1-DE6E-4211-8664-B81D30BC874B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E17689D1-DE6E-4211-8664-B81D30BC874B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E17689D1-DE6E-4211-8664-B81D30BC874B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

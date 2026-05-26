@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using Ingenieria_de_Software___Oven_Pereyra.Logica;
-using Ingenieria_de_Software___Oven_Pereyra.Modelos;
+using BLL;
+using Mapper;
 
-namespace Ingenieria_de_Software___Oven_Pereyra.Forms
+namespace UI
 {
     public partial class FormABM : Form
     {
