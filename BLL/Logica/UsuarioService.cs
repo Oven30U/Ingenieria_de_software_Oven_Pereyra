@@ -82,5 +82,30 @@ namespace BLL
                 ? (true, "Usuario eliminado correctamente.")
                 : (false, "Error al eliminar el usuario.");
         }
+
+
+        public GrupoUsuarios ObtenerArbolPorRol()
+        {
+            var todos = _dao.ObtenerTodos();
+
+            var raiz = new GrupoUsuarios("Sistema");
+
+            var admins = new GrupoUsuarios("admin");
+            var usuarios = new GrupoUsuarios("usuario");
+
+            foreach (var u in todos)
+            {
+                var leaf = new UsuarioLeaf(u);
+                if (u.Rol == "admin")
+                    admins.Agregar(leaf);
+                else
+                    usuarios.Agregar(leaf);
+            }
+
+            raiz.Agregar(admins);
+            raiz.Agregar(usuarios);
+
+            return raiz;
+        }
     }
 }

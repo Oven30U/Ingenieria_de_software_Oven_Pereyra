@@ -16,19 +16,21 @@ namespace UI
         private TextBox txtUsuario, txtClave;
         private ComboBox cmbRol;
         private Button btnAgregar, btnModificar, btnEliminar, btnLimpiar;
-        private Label lblUsuario, lblClave, lblRol, lblTitulo;
+        private Label lblUsuario, lblClave, lblRol, lblTitulo, lblArbol;
+        private TreeView treeArbol;  // ← NUEVO
 
         public FormABM()
         {
             InitializeComponent();
             ConstruirUI();
             CargarGrilla();
+            CargarArbol();  // ← NUEVO
         }
 
         private void ConstruirUI()
         {
             this.Text = "Administrar Usuarios";
-            this.Size = new System.Drawing.Size(620, 520);
+            this.Size = new System.Drawing.Size(900, 520);  // ← más ancho
             this.StartPosition = FormStartPosition.CenterParent;
 
             lblTitulo = new Label { Text = "ABM de Usuarios", Font = new System.Drawing.Font("Arial", 14, System.Drawing.FontStyle.Bold), Location = new System.Drawing.Point(20, 15), Size = new System.Drawing.Size(250, 30) };
@@ -59,6 +61,22 @@ namespace UI
                 AllowUserToAddRows = false
             };
 
+            // ── NUEVO: label y TreeView del Composite ──
+            lblArbol = new Label
+            {
+                Text = "Árbol de usuarios:",
+                Font = new System.Drawing.Font("Arial", 9, System.Drawing.FontStyle.Bold),
+                Location = new System.Drawing.Point(610, 185),
+                Size = new System.Drawing.Size(150, 20)
+            };
+
+            treeArbol = new TreeView
+            {
+                Location = new System.Drawing.Point(610, 210),
+                Size = new System.Drawing.Size(250, 255)
+            };
+            // ──────────────────────────────────────────
+
             btnAgregar.Click += BtnAgregar_Click;
             btnModificar.Click += BtnModificar_Click;
             btnEliminar.Click += BtnEliminar_Click;
@@ -71,22 +89,43 @@ namespace UI
                 lblClave, txtClave,
                 lblRol, cmbRol,
                 btnAgregar, btnModificar, btnEliminar, btnLimpiar,
-                grilla
+                grilla,
+                lblArbol, treeArbol  // ← NUEVO
             });
         }
+
+        // ── NUEVO: construye el TreeView a partir del Composite ──
+        private void CargarArbol()
+        {
+            treeArbol.Nodes.Clear();
+            GrupoUsuarios raiz = service.ObtenerArbolPorRol();
+            TreeNode nodoRaiz = ArmarNodo(raiz);
+            treeArbol.Nodes.Add(nodoRaiz);
+            treeArbol.ExpandAll();
+        }
+
+        private TreeNode ArmarNodo(IComponenteUsuario componente)
+        {
+            var nodo = new TreeNode(componente.Nombre + $" ({componente.Contar()})");
+
+            if (componente is GrupoUsuarios grupo)
+            {
+                foreach (var hijo in grupo.Hijos())
+                    nodo.Nodes.Add(ArmarNodo(hijo));
+            }
+
+            return nodo;
+        }
+        // ─────────────────────────────────────────────────────────
 
         private void CargarGrilla()
         {
             List<Usuario> lista = service.ObtenerTodos();
             grilla.DataSource = lista;
-            if (grilla.Columns.Contains("Id"))
-                grilla.Columns["Id"].HeaderText = "ID";
-            if (grilla.Columns.Contains("NombreUsuario"))
-                grilla.Columns["NombreUsuario"].HeaderText = "Usuario";
-            if (grilla.Columns.Contains("Clave"))
-                grilla.Columns["Clave"].Visible = false;
-            if (grilla.Columns.Contains("Rol"))
-                grilla.Columns["Rol"].HeaderText = "Rol";
+            if (grilla.Columns.Contains("Id")) grilla.Columns["Id"].HeaderText = "ID";
+            if (grilla.Columns.Contains("NombreUsuario")) grilla.Columns["NombreUsuario"].HeaderText = "Usuario";
+            if (grilla.Columns.Contains("Clave")) grilla.Columns["Clave"].Visible = false;
+            if (grilla.Columns.Contains("Rol")) grilla.Columns["Rol"].HeaderText = "Rol";
         }
 
         private void Grilla_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -103,31 +142,27 @@ namespace UI
         private void BtnAgregar_Click(object sender, EventArgs e)
         {
             var (ok, mensaje) = service.Agregar(txtUsuario.Text, txtClave.Text, cmbRol.SelectedItem.ToString());
-            MessageBox.Show(mensaje, ok ? "Éxito" : "Error",
-                MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
-            if (ok) { Limpiar(); CargarGrilla(); }
+            MessageBox.Show(mensaje, ok ? "Éxito" : "Error", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+            if (ok) { Limpiar(); CargarGrilla(); CargarArbol(); }  // ← CargarArbol() para refrescar
         }
 
         private void BtnModificar_Click(object sender, EventArgs e)
         {
             if (idSeleccionado == -1) { MessageBox.Show("Seleccioná un usuario de la grilla.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             var (ok, mensaje) = service.Modificar(idSeleccionado, txtUsuario.Text, txtClave.Text, cmbRol.SelectedItem.ToString());
-            MessageBox.Show(mensaje, ok ? "Éxito" : "Error",
-                MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
-            if (ok) { Limpiar(); CargarGrilla(); }
+            MessageBox.Show(mensaje, ok ? "Éxito" : "Error", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+            if (ok) { Limpiar(); CargarGrilla(); CargarArbol(); }  // ← CargarArbol() para refrescar
         }
 
         private void BtnEliminar_Click(object sender, EventArgs e)
         {
             if (idSeleccionado == -1) { MessageBox.Show("Seleccioná un usuario de la grilla.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            var confirm = MessageBox.Show($"¿Seguro que querés eliminar a '{usuarioSeleccionado}'?", "Confirmar",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            var confirm = MessageBox.Show($"¿Seguro que querés eliminar a '{usuarioSeleccionado}'?", "Confirmar", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (confirm == DialogResult.Yes)
             {
                 var (ok, mensaje) = service.Eliminar(idSeleccionado, usuarioSeleccionado);
-                MessageBox.Show(mensaje, ok ? "Éxito" : "Atención",
-                    MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
-                if (ok) { Limpiar(); CargarGrilla(); }
+                MessageBox.Show(mensaje, ok ? "Éxito" : "Atención", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                if (ok) { Limpiar(); CargarGrilla(); CargarArbol(); }  // ← CargarArbol() para refrescar
             }
         }
 
