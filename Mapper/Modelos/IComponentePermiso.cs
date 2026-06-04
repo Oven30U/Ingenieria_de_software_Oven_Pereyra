@@ -1,9 +1,8 @@
 ﻿namespace Mapper
 {
-    public interface IComponenteUsuario
+    public interface IComponentePermiso
     {
         string Nombre { get; }
-        void Mostrar(int nivel = 0);
         int Contar();
     }
 }

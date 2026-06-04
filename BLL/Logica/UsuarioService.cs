@@ -84,28 +84,40 @@ namespace BLL
         }
 
 
-        public GrupoUsuarios ObtenerArbolPorRol()
+        public GrupoPermiso ObtenerArbolPermisos()
         {
-            var todos = _dao.ObtenerTodos();
+            var raiz = new GrupoPermiso("Raiz");
 
-            var raiz = new GrupoUsuarios("Sistema");
+            // Administrador
+            var admin = new GrupoPermiso("Administrador");
 
-            var admins = new GrupoUsuarios("admin");
-            var usuarios = new GrupoUsuarios("usuario");
+            var gestionProductosAdmin = new GrupoPermiso("gestionProductos");
+            gestionProductosAdmin.Agregar(new PermisoLeaf("addProducto"));
+            gestionProductosAdmin.Agregar(new PermisoLeaf("updateProducto"));
+            gestionProductosAdmin.Agregar(new PermisoLeaf("deleteProducto"));
 
-            foreach (var u in todos)
-            {
-                var leaf = new UsuarioLeaf(u);
-                if (u.Rol == "admin")
-                    admins.Agregar(leaf);
-                else
-                    usuarios.Agregar(leaf);
-            }
+            var gestionUsuarios = new GrupoPermiso("gestionUsuarios");
+            gestionUsuarios.Agregar(new PermisoLeaf("addUsuario"));
+            gestionUsuarios.Agregar(new PermisoLeaf("updateUsuario"));
+            gestionUsuarios.Agregar(new PermisoLeaf("deleteUsuario"));
 
-            raiz.Agregar(admins);
-            raiz.Agregar(usuarios);
+            admin.Agregar(gestionProductosAdmin);
+            admin.Agregar(gestionUsuarios);
+
+            // Vendedor
+            var vendedor = new GrupoPermiso("Vendedor");
+
+            var gestionProductosVendedor = new GrupoPermiso("gestionProductos");
+            gestionProductosVendedor.Agregar(new PermisoLeaf("addProducto"));
+            gestionProductosVendedor.Agregar(new PermisoLeaf("updateProducto"));
+
+            vendedor.Agregar(gestionProductosVendedor);
+
+            raiz.Agregar(admin);
+            raiz.Agregar(vendedor);
 
             return raiz;
         }
+
     }
 }

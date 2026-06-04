@@ -36,10 +36,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Modelos\GrupoUsuarios.cs" />
-    <Compile Include="Modelos\IComponenteUsuario.cs" />
+    <Compile Include="Modelos\GrupoPermiso.cs" />
+    <Compile Include="Modelos\IComponentePermiso.cs" />
+    <Compile Include="Modelos\PermisoLeaf.cs" />
     <Compile Include="Modelos\Usuario.cs" />
-    <Compile Include="Modelos\UsuarioLeaf.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
