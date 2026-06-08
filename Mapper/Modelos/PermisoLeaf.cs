@@ -1,4 +1,4 @@
-﻿namespace Mapper
+namespace Mapper
 {
     public class PermisoLeaf : IComponentePermiso
     {
@@ -9,6 +9,6 @@
             Nombre = nombre;
         }
 
-        public int Contar() => 1;
+        public string ObtenerInfo() => $"Permiso: {Nombre}";
     }
 }

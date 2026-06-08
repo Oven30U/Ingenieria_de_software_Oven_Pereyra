@@ -1,4 +1,4 @@
-﻿using BLL;
+using BLL;
 using System;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
@@ -21,6 +21,8 @@ namespace UI
             button3.Text = "Logout";
             button3.Visible = false;
             button2.Visible = false;
+            button4.Text = "Administrar Composite";
+            button4.Visible = false;
         }
         private void button1_Click(object sender, EventArgs e)
         {
@@ -34,6 +36,7 @@ namespace UI
                 button1.Visible = false;
                 button3.Visible = true;
                 button2.Visible = SesionManager.Instancia.EsAdmin();
+                button4.Visible = SesionManager.Instancia.EsAdmin();
             }
             else
             {
@@ -56,6 +59,7 @@ namespace UI
             button1.Visible = true;
             button2.Visible = false;
             button3.Visible = false;
+            button4.Visible = false;
         }
         private void panel1_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
         {
@@ -66,5 +70,11 @@ namespace UI
                 e.Graphics.DrawRectangle(pen, 0, 0, panel.Width - 1, panel.Height - 1);
             }
         }
+        private void button4_Click(object sender, EventArgs e)
+        {
+            var formComposite = new FormComposite();
+            formComposite.ShowDialog(this);
+        }
+
     }
 }
