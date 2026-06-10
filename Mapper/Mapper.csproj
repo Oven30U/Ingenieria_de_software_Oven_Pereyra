@@ -38,6 +38,7 @@
   <ItemGroup>
     <Compile Include="Modelos\GrupoPermiso.cs" />
     <Compile Include="Modelos\IComponentePermiso.cs" />
+    <Compile Include="Modelos\IObservadorIdioma.cs" />
     <Compile Include="Modelos\PermisoLeaf.cs" />
     <Compile Include="Modelos\Resultado.cs" />
     <Compile Include="Modelos\Usuario.cs" />

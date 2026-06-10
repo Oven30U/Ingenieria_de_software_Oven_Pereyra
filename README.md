@@ -1,110 +1,104 @@
-# Sistema de Usuarios - Ingeniería de Software
+# Sistema de Gestión de Usuarios
 ### UAI - Ingeniería en Sistemas | Oven Pereyra
 
 ---
 
-## ¿Qué es este sistema?
+## ¿Qué hace este sistema?
 
-Sistema de gestión de usuarios con login y ABM (Alta, Baja, Modificación) desarrollado en **C# Windows Forms** con **ADO.NET** y **SQL Server**. Utiliza arquitectura en capas (Presentación, Lógica de Negocio, Datos y Modelo) y encriptación **SHA-256** para las contraseñas.
+Sistema de gestión de usuarios con login, ABM (Alta, Baja, Modificación) y administración de permisos en árbol. Desarrollado en **C# Windows Forms** con **ADO.NET** y **SQL Server**.
+
+**Funcionalidades principales:**
+- Login con contraseña encriptada (SHA-256)
+- ABM completo de usuarios (solo admin)
+- Sistema de permisos jerárquico con patrón **Composite**
+- Cambio de idioma en tiempo de ejecución (Español / Inglés) con patrón **Observer**
+- Bitácora (log) automática de todas las acciones
+- Inicialización automática de la base de datos al arrancar
+
+---
+
+## Arquitectura en capas
+
+```
+Ingenieria de Software - Oven Pereyra.sln
+│
+├── UI/                         → Capa de Presentación (Windows Forms)
+│   ├── Program.cs              → Punto de entrada; inicializa BD y Bitácora
+│   ├── Form1.cs                → Pantalla principal (Login / Logout)
+│   ├── Forms/FormABM.cs        → ABM de usuarios
+│   ├── Forms/FormComposite.cs  → Editor visual de árbol de permisos
+│   └── App.config              → Cadena de conexión a SQL Server
+│
+├── BLL/                        → Capa de Lógica de Negocio
+│   ├── UsuarioService.cs       → Reglas de negocio: login, ABM, árbol Composite
+│   ├── Bitacora.cs             → Singleton de logging en archivos .log
+│   ├── GestorIdioma.cs         → Subject del patrón Observer (cambio de idioma)
+│   ├── PermisoSerializer.cs    → Serialización/deserialización del árbol a texto plano
+│   └── SesionManager.cs        → Singleton que guarda el usuario logueado
+│
+├── DAL/                        → Capa de Datos
+│   └── UsuarioDAL.cs           → Acceso a SQL Server con ADO.NET; encriptación SHA-256
+│
+└── Mapper/                     → Capa de Modelos (entidades compartidas)
+    ├── Modelos/Usuario.cs           → Entidad Usuario
+    ├── Modelos/GrupoPermiso.cs      → Nodo compuesto (patrón Composite)
+    ├── Modelos/PermisoLeaf.cs       → Nodo hoja (patrón Composite)
+    ├── Modelos/IComponentePermiso.cs → Interfaz del Composite
+    ├── Modelos/Resultado.cs          → DTO de respuesta (Ok + Mensaje)
+    └── Modelos/IObservadorIdioma.cs  → Interfaz Observer para cambio de idioma
+```
+
+---
+
+## Patrones de diseño implementados
+
+| Patrón | Clase(s) | Descripción |
+|--------|----------|-------------|
+| **Singleton** | `Bitacora`, `GestorIdioma`, `SesionManager` | Una única instancia global por clase |
+| **Composite** | `GrupoPermiso`, `PermisoLeaf`, `IComponentePermiso` | Árbol jerárquico de permisos |
+| **Observer** | `GestorIdioma` (Subject), `IObservadorIdioma` (Observer), `Form1`, `FormABM`, `FormComposite` (Observers) | Cambio de idioma en cascada |
 
 ---
 
 ## Requisitos previos
 
-- **Visual Studio 2019 o superior** (con soporte para .NET Framework)
-- **SQL Server** (cualquier versión: Express, Developer, Standard, etc.)
-- **SQL Server Management Studio (SSMS)** (opcional, para verificar la base de datos)
+- **Visual Studio 2019 o superior** (con soporte para .NET Framework 4.7.2)
+- **SQL Server** (Express, Developer o Standard)
+- **SQL Server Management Studio** (opcional, para verificar la BD)
 - Paquete NuGet: `System.Data.SqlClient`
 
 ---
 
-## Estructura del proyecto
+## Pasos para ejecutar
 
-```
-Ingenieria de Software - Oven Pereyra/
-├── Datos/
-│   └── UsuarioDAO.cs          → Capa de datos (SQL, conexión a BD, encriptación SHA-256)
-├── Forms/
-│   └── FormABM.cs             → Formulario ABM de usuarios
-├── Logica/
-│   └── UsuarioService.cs      → Capa de lógica de negocio
-├── Modelos/
-│   └── Usuario.cs             → Modelo de datos
-├── Form1.cs                   → Pantalla principal (Login)
-├── Program.cs                 → Punto de entrada, inicializa la BD automáticamente
-├── App.config                 → Configuración de conexión a la BD
-└── script_bd.sql              → Script SQL de respaldo
-```
-
----
-
-## Pasos para ejecutar en cualquier computadora con SQL Server
-
-### Paso 1: Clonar o descargar el proyecto
+### 1. Clonar o descargar el proyecto
 
 ```
 git clone <URL_DEL_REPOSITORIO>
 ```
-O descargá el ZIP desde GitHub y descomprimilo.
 
-### Paso 2: Abrir el proyecto en Visual Studio
+### 2. Abrir en Visual Studio
 
-1. Abrí Visual Studio
-2. Click en **Abrir un proyecto o solución**
-3. Seleccioná el archivo `.sln`
+Abrí el archivo `Ingenieria de Software - Oven Pereyra.sln`.
 
-### Paso 3: Instalar el paquete NuGet
-
-`Herramientas → Administrador de paquetes NuGet → Consola del administrador de paquetes`
+### 3. Instalar el paquete NuGet
 
 ```
+Herramientas → Administrador de paquetes NuGet → Consola
 Install-Package System.Data.SqlClient
 ```
 
-### Paso 4: Verificar que SQL Server está corriendo
+### 4. Verificar que SQL Server está corriendo
 
-#### Opción A: Desde el buscador de Windows
-1. Presioná la tecla **Windows**
-2. Escribí **"Servicios"** y presioná Enter
-3. Buscá **"SQL Server (MSSQLSERVER)"** o **"SQL Server (SQLEXPRESS)"**
-4. Si está detenido → click derecho → **Iniciar**
-
-#### Opción B: Desde Ejecutar (Windows + R)
-1. Presioná **Windows + R**
-2. Escribí `services.msc` y presioná **Enter**
-3. Seguí los pasos anteriores
-
-#### Opción C: Desde CMD como administrador
-Para SQL Server Express:
+Desde CMD como administrador:
 ```
-net start MSSQL$SQLEXPRESS
-```
-Para SQL Server estándar:
-```
-net start MSSQLSERVER
+net start MSSQLSERVER          # SQL Server estándar
+net start MSSQL$SQLEXPRESS     # SQL Server Express
 ```
 
-#### Para que arranque automáticamente siempre:
-1. Abrí Servicios
-2. Click derecho sobre SQL Server → **Propiedades**
-3. Tipo de inicio → **Automático** → Aceptar
+### 5. Configurar la cadena de conexión
 
----
-
-### Paso 5: Obtener el nombre del servidor SQL
-
-1. Abrí **SQL Server Management Studio (SSMS)**
-2. Copiá el valor del campo **"Nombre del servidor"**
-
-Ejemplos comunes:
-- `DESKTOP-ABC123\SQLEXPRESS`
-- `NOMBRE-PC\SQLEXPRESS`
-- `localhost`
-- `NOMBRE-PC`
-
-### Paso 6: Configurar la conexión en App.config
-
-Abrí `App.config` y modificá el `connectionString`:
+Editá `App.config` con el nombre de tu servidor:
 
 ```xml
 <connectionStrings>
@@ -114,23 +108,11 @@ Abrí `App.config` y modificá el `connectionString`:
 </connectionStrings>
 ```
 
-Reemplazá `TU_SERVIDOR` por el nombre de tu servidor. Ejemplo:
-```xml
-connectionString="Server=DESKTOP-ABC123\SQLEXPRESS;Database=IngenieriaSoftware;Integrated Security=True;"
-```
+Ejemplos de servidor: `localhost`, `.\SQLEXPRESS`, `NOMBRE-PC\SQLEXPRESS`
 
-> **Importante:** En App.config usá `\` simple. En código C# se usa `\\` doble.
+### 6. Ejecutar (F5)
 
-### Paso 7: Ejecutar el sistema
-
-Presioná **F5** en Visual Studio. El sistema automáticamente:
-- ✅ Crea la base de datos `IngenieriaSoftware` si no existe
-- ✅ Crea la tabla `Usuarios` con columna `Clave NVARCHAR(64)` para el hash SHA-256
-- ✅ Agrega la columna `Rol` si faltaba
-- ✅ Crea el usuario administrador con la clave encriptada en SHA-256
-- ✅ Actualiza la clave del admin al hash correcto en cada arranque
-
-**No es necesario ejecutar ningún script SQL manualmente.**
+El sistema crea automáticamente la base de datos, la tabla `Usuarios` y el usuario administrador. **No hace falta correr ningún script SQL.**
 
 ---
 
@@ -142,54 +124,52 @@ Presioná **F5** en Visual Studio. El sistema automáticamente:
 | Clave   | `admin123` |
 | Rol     | `admin`    |
 
-> La clave se almacena encriptada con SHA-256. Nunca se guarda en texto plano.
+La clave se guarda como hash SHA-256 (64 caracteres hex). Nunca en texto plano.
 
 ---
 
-## Funcionamiento del sistema
+## Flujo de uso
 
-### Pantalla principal
-- Ingresás usuario y contraseña → click en **Iniciar sesión**
-- Si las credenciales son correctas, se ocultan los campos de login
-- Si el usuario es **admin** → aparece el botón **Administrar Usuarios**
-- Todos los usuarios ven el botón **Cerrar sesión**
+### Login
+1. Ingresás usuario y contraseña → **Iniciar sesión**
+2. Si las credenciales son correctas, aparecen los botones de administración (solo si sos admin)
 
 ### ABM de Usuarios (solo admin)
-- **Agregar:** completá usuario, contraseña y rol → click en Agregar
-- **Modificar:** seleccioná un usuario de la grilla, modificá los campos → click en Modificar. Si dejás la clave vacía, se mantiene la clave actual
-- **Eliminar:** seleccioná un usuario → click en Eliminar. El usuario `admin` no puede ser eliminado
-- **Limpiar:** limpia los campos del formulario
+- **Agregar:** completá usuario, contraseña y rol → Agregar
+- **Modificar:** seleccioná de la grilla, editá → Modificar (clave vacía = no cambia)
+- **Eliminar:** seleccioná → Eliminar (el usuario `admin` no puede eliminarse)
 
-### Roles disponibles
-- `usuario` → solo puede iniciar y cerrar sesión
-- `admin` → puede iniciar sesión y administrar usuarios
+### Gestión de Permisos
+Desde el ABM, botón **Editar Permisos** → abre `FormComposite` con el árbol del usuario seleccionado. Podés agregar familias (grupos), parientes (hojas), enlazarlos y guardar.
 
----
-
-## Encriptación SHA-256
-
-Las contraseñas **nunca se almacenan en texto plano**. El sistema aplica SHA-256 en:
-- **Login:** la clave ingresada se hashea antes de comparar con la BD
-- **Alta de usuario:** la clave se hashea antes de insertar
-- **Modificación:** la nueva clave se hashea antes de actualizar
-
-Ejemplo:
-```
-Clave ingresada: admin123
-Hash SHA-256:    240be518fabd2724ddb6f04eeb1da5967448d7e8f9324d292ec231629a657db6
-Lo que se guarda en la BD: el hash (64 caracteres)
-```
+### Cambio de idioma
+Botón **English / Español** en la esquina superior derecha — actualiza todos los formularios abiertos en tiempo real.
 
 ---
 
-## Arquitectura del sistema
+## Base de datos
 
-| Capa | Archivo | Responsabilidad |
-|------|---------|-----------------|
-| Presentación | `Form1.cs`, `FormABM.cs` | Interfaz visual, eventos de usuario |
-| Lógica de negocio | `UsuarioService.cs` | Validaciones y reglas del sistema |
-| Datos | `UsuarioDAO.cs` | SQL, conexión a BD y encriptación |
-| Modelo | `Usuario.cs` | Definición de la entidad Usuario |
+Tabla `Usuarios` en la base `IngenieriaSoftware`:
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| Id | INT IDENTITY | PK autoincremental |
+| Usuario | NVARCHAR(100) UNIQUE | Nombre de usuario |
+| Clave | NVARCHAR(64) | Hash SHA-256 |
+| Rol | NVARCHAR(50) | `admin` o `usuario` |
+| Permisos | NVARCHAR(MAX) | Árbol Composite serializado |
+| TipoPermiso | NVARCHAR(100) | Nombre de la familia principal |
+
+---
+
+## Bitácora (logs)
+
+Cada ejecución genera un archivo nuevo en `bin/Debug/logs/` con formato:
+```
+log_2026-06-09_21-00-51.log
+```
+
+Registra: login exitoso/fallido, logout, alta/baja/modificación de usuarios, cambios de permisos, cambios de idioma y errores de base de datos.
 
 ---
 
@@ -197,20 +177,19 @@ Lo que se guarda en la BD: el hash (64 caracteres)
 
 | Error | Causa | Solución |
 |-------|-------|----------|
-| `Error relacionado con la red` | SQL Server no está corriendo | Iniciar el servicio (ver Paso 4) |
-| `Cannot open database` | Base de datos no existe o nombre incorrecto | Verificar `connectionString` en `App.config` |
-| `Invalid column name 'Rol'` | Columna Rol no existe | El sistema la crea automáticamente al iniciar |
-| `Login failed for user` | Autenticación incorrecta | Usar `Integrated Security=True` |
-| El .exe está bloqueado al compilar | Otro proceso bloquea el archivo (ej: Valorant) | Cerrar el proceso desde Administrador de tareas (Ctrl+Shift+Esc) |
-| Usuario o clave incorrectos | Hash en BD no coincide | El sistema actualiza el hash del admin automáticamente al arrancar |
+| `Error relacionado con la red` | SQL Server no está corriendo | Iniciar el servicio (ver paso 4) |
+| `Cannot open database` | Nombre de servidor incorrecto | Verificar `connectionString` en `App.config` |
+| `Invalid column name 'Rol'` | Tabla desactualizada | El sistema la agrega automáticamente al iniciar |
+| `Login failed for user` | Autenticación de Windows | Usar `Integrated Security=True` |
+| .exe bloqueado al compilar | Otro proceso lo usa (ej: antivirus) | Cerrar el proceso desde el Administrador de tareas |
 
 ---
 
 ## Tecnologías utilizadas
 
-- **Lenguaje:** C# (.NET Framework)
+- **Lenguaje:** C# (.NET Framework 4.7.2)
 - **Interfaz:** Windows Forms
 - **Base de datos:** Microsoft SQL Server
-- **Acceso a datos:** ADO.NET (`SqlConnection`, `SqlCommand`)
+- **Acceso a datos:** ADO.NET (`SqlConnection`, `SqlCommand`, `SqlDataReader`)
 - **Encriptación:** SHA-256 (`System.Security.Cryptography`)
-- **Configuración:** App.config con `ConnectionStrings`
+- **Configuración:** `App.config` con `ConnectionStrings`

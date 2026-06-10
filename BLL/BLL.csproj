@@ -36,6 +36,9 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logica\Bitacora.cs" />
+    <Compile Include="Logica\GestorIdioma.cs" />
+    <Compile Include="Logica\PermisoSerializer.cs" />
     <Compile Include="Logica\SesionManager.cs" />
     <Compile Include="Logica\UsuarioService.cs" />
   </ItemGroup>
