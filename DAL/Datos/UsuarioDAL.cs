@@ -48,7 +48,7 @@ namespace DAL
                 using (var cmd = new SqlCommand(crearTabla, con))
                     cmd.ExecuteNonQuery();
 
-                // Agregar columnas si la tabla ya existia sin ellas
+                
                 EjecutarSiNoExisteColumna(con, "Rol", "ALTER TABLE Usuarios ADD Rol NVARCHAR(50) NOT NULL DEFAULT 'usuario';");
                 EjecutarSiNoExisteColumna(con, "Permisos", "ALTER TABLE Usuarios ADD Permisos NVARCHAR(MAX) NULL;");
                 EjecutarSiNoExisteColumna(con, "TipoPermiso", "ALTER TABLE Usuarios ADD TipoPermiso NVARCHAR(100) NULL;");

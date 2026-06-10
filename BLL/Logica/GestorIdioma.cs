@@ -3,11 +3,7 @@ using Mapper;
 
 namespace BLL
 {
-    /// <summary>
-    /// Subject del patron Observer.
-    /// Singleton que guarda el idioma actual y notifica a todos los forms suscritos
-    /// cuando el idioma cambia.
-    /// </summary>
+   
     public class GestorIdioma
     {
         private static GestorIdioma _instancia;
@@ -28,7 +24,7 @@ namespace BLL
             }
         }
 
-        // ── Observer: suscripcion ─────────────────────────────────────────────
+       
         public void Suscribir(IObservadorIdioma observador)
         {
             if (!_observadores.Contains(observador))
@@ -46,14 +42,14 @@ namespace BLL
                 obs.ActualizarIdioma();
         }
 
-        // ── Cambiar idioma y notificar ────────────────────────────────────────
+        
         public void CambiarIdioma()
         {
             IdiomaActual = IdiomaActual == Idioma.Espanol ? Idioma.Ingles : Idioma.Espanol;
             Notificar();
         }
 
-        // ── Helper: devuelve el texto segun idioma actual ─────────────────────
+        
         public bool EsEspanol => IdiomaActual == Idioma.Espanol;
 
         public string T(string espanol, string ingles)
