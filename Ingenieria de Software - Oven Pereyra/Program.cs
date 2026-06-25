@@ -10,7 +10,6 @@ namespace UI
         [STAThread]
         static void Main()
         {
-            // Inicializar la bitacora al arrancar (crea carpeta logs y archivo nuevo)
             Bitacora log = Bitacora.Instancia;
 
             Application.EnableVisualStyles();
@@ -20,6 +19,10 @@ namespace UI
             {
                 var dao = new UsuarioDAL();
                 dao.InicializarBaseDatos();
+
+                var idiomaDAL = new IdiomaDAL();
+                idiomaDAL.InicializarTablas();
+
                 log.Info("INICIO", "Base de datos inicializada correctamente.");
             }
             catch (Exception ex)
@@ -31,9 +34,7 @@ namespace UI
                 return;
             }
 
-            // Registrar cierre de la app al salir
             Application.ApplicationExit += (s, e) => log.CierreApp();
-
             Application.Run(new Form1());
         }
     }

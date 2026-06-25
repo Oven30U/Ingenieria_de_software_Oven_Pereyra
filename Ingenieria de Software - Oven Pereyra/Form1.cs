@@ -1,6 +1,7 @@
 using BLL;
 using Mapper;
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace UI
@@ -8,68 +9,122 @@ namespace UI
     public partial class Form1 : Form, IObservadorIdioma
     {
         private UsuarioService service = new UsuarioService();
-        private GestorIdioma gestor = GestorIdioma.Instancia;
-        private Bitacora log = Bitacora.Instancia;
-        private Button btnIdioma;
+        private GestorIdioma   gestor  = GestorIdioma.Instancia;
+        private Bitacora       log     = Bitacora.Instancia;
+
+        private ComboBox cmbIdioma;
+        private Button   btnGestionIdiomas;
 
         public Form1()
         {
             InitializeComponent();
-            AgregarBotonIdioma();
+            AgregarControlesIdioma();
             ConfigurarPantalla();
             gestor.Suscribir(this);
         }
 
-        private void AgregarBotonIdioma()
+        private void AgregarControlesIdioma()
         {
-            btnIdioma = new Button
-            {
-                Text      = "English",
-                Size      = new System.Drawing.Size(90, 28),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = System.Drawing.Color.FromArgb(60, 100, 160),
-                ForeColor = System.Drawing.Color.White,
-                Font      = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold),
-                Anchor    = AnchorStyles.Top | AnchorStyles.Right
-            };
-            btnIdioma.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(40, 70, 120);
-            btnIdioma.Click += (s, e) =>
-            {
-                string antes = gestor.EsEspanol ? "Español" : "Ingles";
-                gestor.CambiarIdioma();
-                string despues = gestor.EsEspanol ? "Español" : "Ingles";
-                log.CambioIdioma(antes, despues);
-            };
+            cmbIdioma = new ComboBox();
+            cmbIdioma.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbIdioma.Size          = new Size(130, 26);
+            cmbIdioma.Font          = new Font("Segoe UI", 9, FontStyle.Bold);
+            cmbIdioma.FlatStyle     = FlatStyle.Flat;
+            cmbIdioma.BackColor     = Color.White;
+            cmbIdioma.ForeColor     = Color.FromArgb(40, 70, 130);
+            cmbIdioma.Anchor        = AnchorStyles.Top | AnchorStyles.Right;
+            cmbIdioma.SelectedIndexChanged += CmbIdioma_SelectedIndexChanged;
 
-            this.Load += (s, e) =>
-                btnIdioma.Location = new System.Drawing.Point(this.ClientSize.Width - btnIdioma.Width - 10, 10);
-            this.Resize += (s, e) =>
-                btnIdioma.Location = new System.Drawing.Point(this.ClientSize.Width - btnIdioma.Width - 10, 10);
+            btnGestionIdiomas = new Button();
+            btnGestionIdiomas.Text      = "Idiomas";
+            btnGestionIdiomas.Size      = new Size(80, 26);
+            btnGestionIdiomas.FlatStyle = FlatStyle.Flat;
+            btnGestionIdiomas.BackColor = Color.FromArgb(60, 100, 160);
+            btnGestionIdiomas.ForeColor = Color.White;
+            btnGestionIdiomas.Font      = new Font("Segoe UI", 8, FontStyle.Bold);
+            btnGestionIdiomas.Anchor    = AnchorStyles.Top | AnchorStyles.Right;
+            btnGestionIdiomas.FlatAppearance.BorderSize = 0;
+            btnGestionIdiomas.Click += BtnGestionIdiomas_Click;
 
-            this.Controls.Add(btnIdioma);
-            btnIdioma.BringToFront();
+            this.Load   += (s, e) => PosicionarControlesIdioma();
+            this.Resize += (s, e) => PosicionarControlesIdioma();
+
+            this.Controls.Add(cmbIdioma);
+            this.Controls.Add(btnGestionIdiomas);
+            cmbIdioma.BringToFront();
+            btnGestionIdiomas.BringToFront();
+
+            RefrescarComboIdiomas();
+        }
+
+        private void PosicionarControlesIdioma()
+        {
+            btnGestionIdiomas.Location = new Point(this.ClientSize.Width - btnGestionIdiomas.Width - 10, 10);
+            cmbIdioma.Location         = new Point(btnGestionIdiomas.Left - cmbIdioma.Width - 8, 10);
+        }
+
+        private void RefrescarComboIdiomas()
+        {
+            cmbIdioma.SelectedIndexChanged -= CmbIdioma_SelectedIndexChanged;
+            cmbIdioma.DataSource    = null;
+            cmbIdioma.DataSource    = gestor.ObtenerIdiomas();
+            cmbIdioma.DisplayMember = "Nombre";
+            cmbIdioma.ValueMember   = "Id";
+            if (gestor.IdiomaActual != null)
+                cmbIdioma.SelectedValue = gestor.IdiomaActual.Id;
+            cmbIdioma.SelectedIndexChanged += CmbIdioma_SelectedIndexChanged;
+        }
+
+        private void CmbIdioma_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Idioma seleccionado = cmbIdioma.SelectedItem as Idioma;
+            if (seleccionado != null)
+            {
+                string antes = gestor.IdiomaActual != null ? gestor.IdiomaActual.Nombre : "?";
+                gestor.CambiarIdioma(seleccionado.Id);
+                string despues = gestor.IdiomaActual != null ? gestor.IdiomaActual.Nombre : "?";
+                if (antes != despues)
+                    log.CambioIdioma(antes, despues);
+            }
+        }
+
+        private void BtnGestionIdiomas_Click(object sender, EventArgs e)
+        {
+            var form = new FormIdiomas();
+            form.ShowDialog(this);
+            form.Dispose();
+            gestor.CargarIdiomas();
+            RefrescarComboIdiomas();
         }
 
         private void ConfigurarPantalla()
         {
             textBox2.PasswordChar = '*';
-            button1.Text = gestor.T("Iniciar sesión", "Log in");
-            button2.Text = gestor.T("Administrar Usuarios", "Manage Users");
-            button3.Text = gestor.T("Cerrar sesión", "Log out");
-            button4.Text = gestor.T("Administrar Composite", "Manage Composite");
+            button1.Text  = gestor.T("btn_login");
+            button2.Text  = gestor.T("btn_usuarios");
+            button3.Text  = gestor.T("btn_logout");
+            button4.Text  = gestor.T("btn_composite");
+            button5.Text  = "Bitacora";
+            button6.Text  = "Control de Cambios";
             button3.Visible = false;
             button2.Visible = false;
             button4.Visible = false;
+            button5.Visible = false;
+            button6.Visible = false;
         }
 
         public void ActualizarIdioma()
         {
-            btnIdioma.Text   = gestor.EsEspanol ? "English" : "Español";
-            button1.Text     = gestor.T("Iniciar sesión", "Log in");
-            button2.Text     = gestor.T("Administrar Usuarios", "Manage Users");
-            button3.Text     = gestor.T("Cerrar sesión", "Log out");
-            button4.Text     = gestor.T("Administrar Composite", "Manage Composite");
-            this.Text        = gestor.T("Sistema de Usuarios", "User System");
+            cmbIdioma.SelectedIndexChanged -= CmbIdioma_SelectedIndexChanged;
+            if (gestor.IdiomaActual != null)
+                cmbIdioma.SelectedValue = gestor.IdiomaActual.Id;
+            cmbIdioma.SelectedIndexChanged += CmbIdioma_SelectedIndexChanged;
+
+            button1.Text = gestor.T("btn_login");
+            button2.Text = gestor.T("btn_usuarios");
+            button3.Text = gestor.T("btn_logout");
+            button4.Text = gestor.T("btn_composite");
+            this.Text    = gestor.T("titulo_principal");
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -80,23 +135,27 @@ namespace UI
             {
                 log.LoginExitoso(usuario);
                 MessageBox.Show(
-                    gestor.T($"Bienvenido, {usuario}!", $"Welcome, {usuario}!"),
-                    gestor.T("Acceso correcto", "Access granted"),
+                    gestor.T("msg_bienvenido", usuario),
+                    gestor.T("msg_acceso_ok"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 textBox1.Visible = false;
                 textBox2.Visible = false;
                 button1.Visible  = false;
                 button3.Visible  = true;
-                button2.Visible  = SesionManager.Instancia.EsAdmin();
-                button4.Visible  = SesionManager.Instancia.EsAdmin();
+
+                bool esAdmin = SesionManager.Instancia.EsAdmin();
+                button2.Visible = esAdmin;
+                button4.Visible = esAdmin;
+                button5.Visible = esAdmin;
+                button6.Visible = esAdmin;
             }
             else
             {
                 log.LoginFallido(usuario);
                 MessageBox.Show(
-                    gestor.T("Usuario o clave incorrectos.", "Incorrect username or password."),
-                    gestor.T("Error", "Error"),
+                    gestor.T("msg_cred_error"),
+                    gestor.T("titulo_principal"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -109,7 +168,9 @@ namespace UI
 
         private void button3_Click(object sender, EventArgs e)
         {
-            string usuario = SesionManager.Instancia.ObtenerUsuarioActual()?.NombreUsuario ?? "desconocido";
+            string usuario = SesionManager.Instancia.ObtenerUsuarioActual() != null
+                ? SesionManager.Instancia.ObtenerUsuarioActual().NombreUsuario
+                : "desconocido";
             service.Logout();
             log.Logout(usuario);
 
@@ -121,20 +182,36 @@ namespace UI
             button2.Visible  = false;
             button3.Visible  = false;
             button4.Visible  = false;
-        }
-
-        private void panel1_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
-        {
-            var panel = sender as System.Windows.Forms.Panel;
-            e.Graphics.Clear(panel.BackColor);
-            using (var pen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(220, 220, 220), 1))
-                e.Graphics.DrawRectangle(pen, 0, 0, panel.Width - 1, panel.Height - 1);
+            button5.Visible  = false;
+            button6.Visible  = false;
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
             var formComposite = new FormComposite();
             formComposite.ShowDialog(this);
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            var form = new FormBitacora();
+            form.ShowDialog(this);
+            form.Dispose();
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            var form = new FormControlCambios();
+            form.ShowDialog(this);
+            form.Dispose();
+        }
+
+        private void panel1_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
+        {
+            var panel = sender as System.Windows.Forms.Panel;
+            e.Graphics.Clear(panel.BackColor);
+            using (var pen = new System.Drawing.Pen(Color.FromArgb(220, 220, 220), 1))
+                e.Graphics.DrawRectangle(pen, 0, 0, panel.Width - 1, panel.Height - 1);
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)

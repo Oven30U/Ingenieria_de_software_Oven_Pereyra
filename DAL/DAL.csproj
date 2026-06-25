@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Datos\UsuarioDAL.cs" />
+    <Compile Include="IdiomaDAL.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Mapper\Mapper.csproj">

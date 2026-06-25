@@ -53,6 +53,9 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="FormIdiomas.cs" />
+    <Compile Include="Forms\FormBitacora.cs" />
+    <Compile Include="Forms\FormControlCambios.cs" />
     <Compile Include="Forms\FormABM.cs">
       <SubType>Form</SubType>
     </Compile>

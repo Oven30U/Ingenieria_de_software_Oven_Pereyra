@@ -15,8 +15,8 @@ namespace UI
 
         private TreeView treeArbol;
         private TreeView treePreview;
-        private Label lblUsuarioActual, lblNueva, lblCol1, lblCol2, lblCol3, lblCol4;
-        private ListBox lstFamilias, lstParientes, lstSeleccionados;
+        private Label lblUsuarioActual, lblNueva, lblCol1, lblCol2, lblCol4;
+        private ListBox lstFamilias, lstParientes;
         private TextBox txtNueva;
         private Button btnAgregar, btnAgregarFamilia, btnAgregarPariente;
         private Button btnEnlazarPariente, btnEliminarSeleccionado, btnGuardarFamilia;
@@ -70,15 +70,14 @@ namespace UI
 
             int headerTop = 60, listaTop = 78, listaAlto = 370;
 
-            lblCol1 = new Label { Text = gestor.T("Familias", "Families"),    Location = new System.Drawing.Point(8,   headerTop), Size = new System.Drawing.Size(180, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
-            lblCol2 = new Label { Text = gestor.T("Parientes", "Members"),    Location = new System.Drawing.Point(196, headerTop), Size = new System.Drawing.Size(220, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
-            lblCol3 = new Label { Text = gestor.T("A eliminar", "To delete"), Location = new System.Drawing.Point(424, headerTop), Size = new System.Drawing.Size(150, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
-            lblCol4 = new Label { Text = "Preview",                            Location = new System.Drawing.Point(582, headerTop), Size = new System.Drawing.Size(162, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
+            // Col3 (A eliminar) eliminada — Preview ocupa todo ese espacio
+            lblCol1 = new Label { Text = gestor.T("Familias", "Families"),  Location = new System.Drawing.Point(8,   headerTop), Size = new System.Drawing.Size(220, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
+            lblCol2 = new Label { Text = gestor.T("Parientes", "Members"),  Location = new System.Drawing.Point(236, headerTop), Size = new System.Drawing.Size(220, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
+            lblCol4 = new Label { Text = "Preview",                          Location = new System.Drawing.Point(464, headerTop), Size = new System.Drawing.Size(280, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
 
-            lstFamilias      = new ListBox { Location = new System.Drawing.Point(8,   listaTop), Size = new System.Drawing.Size(180, listaAlto), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 9), SelectionMode = SelectionMode.One };
-            lstParientes     = new ListBox { Location = new System.Drawing.Point(196, listaTop), Size = new System.Drawing.Size(220, listaAlto), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 9), SelectionMode = SelectionMode.One };
-            lstSeleccionados = new ListBox { Location = new System.Drawing.Point(424, listaTop), Size = new System.Drawing.Size(150, listaAlto), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 9), SelectionMode = SelectionMode.None };
-            treePreview      = new TreeView { Location = new System.Drawing.Point(582, listaTop), Size = new System.Drawing.Size(162, listaAlto), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 8) };
+            lstFamilias  = new ListBox { Location = new System.Drawing.Point(8,   listaTop), Size = new System.Drawing.Size(220, listaAlto), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 9), SelectionMode = SelectionMode.One };
+            lstParientes = new ListBox { Location = new System.Drawing.Point(236, listaTop), Size = new System.Drawing.Size(220, listaAlto), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 9), SelectionMode = SelectionMode.One };
+            treePreview  = new TreeView { Location = new System.Drawing.Point(464, listaTop), Size = new System.Drawing.Size(280, listaAlto), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 8) };
 
             lstFamilias.SelectedIndexChanged  += (s, e) => ActualizarPreview();
             lstParientes.SelectedIndexChanged += (s, e) => ActualizarPreview();
@@ -88,16 +87,16 @@ namespace UI
             int fila1 = listaTop + listaAlto + 10;
             int fila2 = fila1 + 36;
 
-            btnAgregarFamilia       = ConstruirBoton(gestor.T("Agregar Familia", "Add Family"),                    8,   fila1, 180, 30, false); btnAgregarFamilia.Click       += BtnAgregarFamilia_Click;
-            btnAgregarPariente      = ConstruirBoton(gestor.T("Agregar Pariente", "Add Member"),                 196,   fila1, 220, 30, false); btnAgregarPariente.Click      += BtnAgregarPariente_Click;
-            btnEliminarSeleccionado = ConstruirBoton(gestor.T("Eliminar seleccionado", "Delete selected"),       424,   fila1, 320, 30, true);  btnEliminarSeleccionado.Click += BtnEliminarSeleccionado_Click;
-            btnEnlazarPariente      = ConstruirBoton(gestor.T("Enlazar Pariente a Familia", "Link Member to Family"), 196, fila2, 220, 30, false); btnEnlazarPariente.Click += BtnEnlazarPariente_Click;
+            btnAgregarFamilia       = ConstruirBoton(gestor.T("Agregar Familia",            "Add Family"),              8,   fila1, 220, 30, false); btnAgregarFamilia.Click       += BtnAgregarFamilia_Click;
+            btnAgregarPariente      = ConstruirBoton(gestor.T("Agregar Pariente",           "Add Member"),            236,   fila1, 220, 30, false); btnAgregarPariente.Click      += BtnAgregarPariente_Click;
+            btnEliminarSeleccionado = ConstruirBoton(gestor.T("Eliminar seleccionado",      "Delete selected"),       464,   fila1, 280, 30, true);  btnEliminarSeleccionado.Click += BtnEliminarSeleccionado_Click;
+            btnEnlazarPariente      = ConstruirBoton(gestor.T("Enlazar Pariente a Familia", "Link Member to Family"), 236,   fila2, 220, 30, false); btnEnlazarPariente.Click      += BtnEnlazarPariente_Click;
 
-            btnGuardarFamilia = new Button { Location = new System.Drawing.Point(424, fila2), Size = new System.Drawing.Size(320, 30), Text = gestor.T("💾  GUARDAR PERMISOS", "💾  SAVE PERMISSIONS"), FlatStyle = FlatStyle.Flat, BackColor = System.Drawing.Color.FromArgb(100, 180, 100), ForeColor = System.Drawing.Color.White, Font = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold) };
+            btnGuardarFamilia = new Button { Location = new System.Drawing.Point(464, fila2), Size = new System.Drawing.Size(280, 30), Text = gestor.T("💾  GUARDAR PERMISOS", "💾  SAVE PERMISSIONS"), FlatStyle = FlatStyle.Flat, BackColor = System.Drawing.Color.FromArgb(100, 180, 100), ForeColor = System.Drawing.Color.White, Font = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold) };
             btnGuardarFamilia.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(60, 140, 60);
             btnGuardarFamilia.Click += BtnGuardarFamilia_Click;
 
-            panelDer.Controls.AddRange(new Control[] { lblNueva, txtNueva, btnAgregar, lblCol1, lstFamilias, lblCol2, lstParientes, lblCol3, lstSeleccionados, lblCol4, treePreview, btnAgregarFamilia, btnAgregarPariente, btnEnlazarPariente, btnEliminarSeleccionado, btnGuardarFamilia });
+            panelDer.Controls.AddRange(new Control[] { lblNueva, txtNueva, btnAgregar, lblCol1, lstFamilias, lblCol2, lstParientes, lblCol4, treePreview, btnAgregarFamilia, btnAgregarPariente, btnEnlazarPariente, btnEliminarSeleccionado, btnGuardarFamilia });
             this.Controls.AddRange(new Control[] { lblUsuarioActual, panelIzq, panelDer });
         }
 
@@ -116,7 +115,6 @@ namespace UI
             lblNueva.Text          = gestor.T("Nueva familia / pariente:", "New family / member:");
             lblCol1.Text           = gestor.T("Familias", "Families");
             lblCol2.Text           = gestor.T("Parientes", "Members");
-            lblCol3.Text           = gestor.T("A eliminar", "To delete");
             btnAgregar.Text        = gestor.T("Agregar familia + pariente", "Add family + member");
             btnAgregarFamilia.Text  = gestor.T("Agregar Familia", "Add Family");
             btnAgregarPariente.Text = gestor.T("Agregar Pariente", "Add Member");
@@ -150,8 +148,8 @@ namespace UI
             RecolectarHojas(raiz, lstParientes);
             foreach (string p in service.ObtenerParientesDisponibles())
                 if (!lstParientes.Items.Contains(p)) lstParientes.Items.Add(p);
-            if (fa != null && lstFamilias.Items.Contains(fa))   lstFamilias.SelectedItem  = fa;
-            if (pa != null && lstParientes.Items.Contains(pa))  lstParientes.SelectedItem = pa;
+            if (fa != null && lstFamilias.Items.Contains(fa))  lstFamilias.SelectedItem  = fa;
+            if (pa != null && lstParientes.Items.Contains(pa)) lstParientes.SelectedItem = pa;
         }
 
         private void RecolectarGrupos(GrupoPermiso g, ListBox lb) { lb.Items.Add(g.Nombre); foreach (var h in g.Hijos()) { GrupoPermiso gg = h as GrupoPermiso; if (gg != null) RecolectarGrupos(gg, lb); } }
@@ -159,7 +157,7 @@ namespace UI
 
         private void ActualizarPreview()
         {
-            treePreview.Nodes.Clear(); lstSeleccionados.Items.Clear();
+            treePreview.Nodes.Clear();
             string nn = txtNueva.Text.Trim();
             string fs = lstFamilias.SelectedItem  != null ? lstFamilias.SelectedItem.ToString()  : null;
             string ps = lstParientes.SelectedItem != null ? lstParientes.SelectedItem.ToString() : null;
@@ -170,11 +168,6 @@ namespace UI
                 if (hn) { var nh = new TreeNode(nn); if (hp) nh.Nodes.Add(new TreeNode(ps)); np.Nodes.Add(nh); }
                 else if (hp) np.Nodes.Add(new TreeNode(ps));
                 treePreview.Nodes.Add(np); treePreview.ExpandAll();
-            }
-            if (hf || hp)
-            {
-                if (hf) { lstSeleccionados.Items.Add("[" + gestor.T("Familia","Family") + "] " + fs); GrupoPermiso gr = BuscarGrupo(service.ObtenerArbol(), fs); if (gr != null) foreach (var h in gr.Hijos()) lstSeleccionados.Items.Add("  - " + h.Nombre); }
-                if (hp) lstSeleccionados.Items.Add("[" + gestor.T("Pariente","Member") + "] " + ps);
             }
         }
 
@@ -237,7 +230,7 @@ namespace UI
             {
                 if (!string.IsNullOrWhiteSpace(fs)) service.EliminarFamilia(fs);
                 if (!string.IsNullOrWhiteSpace(ps)) service.EliminarPariente(ps);
-                lstSeleccionados.Items.Clear(); RefrescarArbol(); RefrescarListas(); ActualizarPreview();
+                RefrescarArbol(); RefrescarListas(); ActualizarPreview();
             }
         }
 
@@ -248,7 +241,7 @@ namespace UI
             Resultado res = service.GuardarPermisosDeUsuario(tipoPermiso);
             if (res.Ok)
             {
-                string operador = SesionManager.Instancia.ObtenerUsuarioActual()?.NombreUsuario ?? "desconocido";
+                string operador = SesionManager.Instancia.ObtenerUsuarioActual() != null ? SesionManager.Instancia.ObtenerUsuarioActual().NombreUsuario : "desconocido";
                 log.PermisosGuardados(operador, _usuarioEditado.NombreUsuario, tipoPermiso);
             }
             MessageBox.Show(res.Mensaje, res.Ok ? gestor.T("Guardar","Save") : gestor.T("Error","Error"),
