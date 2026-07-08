@@ -5,13 +5,7 @@ using Mapper;
 
 namespace BLL
 {
-    /// <summary>
-    /// GestorIdioma — Singleton + Observer.
-    /// Compatible con .NET Framework 4.7.2.
-    ///
-    /// T(tag)          → traduce por tag de BD (nuevo sistema)
-    /// T(esp, ing)     → compatibilidad con FormABM existente (hardcodeado)
-    /// </summary>
+
     public class GestorIdioma
     {
         private static GestorIdioma _instancia;
@@ -42,7 +36,6 @@ namespace BLL
             return _dal;
         }
 
-        // ── Carga ──────────────────────────────────────────────────────
         public void CargarIdiomas()
         {
             _idiomas = _dal.ObtenerIdiomas();
@@ -55,7 +48,6 @@ namespace BLL
             return new List<Idioma>(_idiomas);
         }
 
-        // ── Cambio de idioma ───────────────────────────────────────────
         public void CambiarIdioma(int idIdioma)
         {
             Idioma encontrado = null;
@@ -68,7 +60,6 @@ namespace BLL
             Notificar();
         }
 
-        // ── Traducción por tag (sistema nuevo) ─────────────────────────
         public string T(string tag)
         {
             if (string.IsNullOrWhiteSpace(tag)) return string.Empty;
@@ -78,18 +69,14 @@ namespace BLL
             return "[" + tag + "]";
         }
 
-        // ── Traducción con parámetros — doble uso:
-        //    a) T("msg_bienvenido", nombre)     → formato con tag de BD
-        //    b) T("Texto español", "Text eng")  → fallback hardcodeado (FormABM)
         public string T(string primerArg, params object[] args)
         {
-            // Detectar firma vieja: exactamente 1 argumento string y primerArg parece texto (no tag)
+
             if (args.Length == 1 && args[0] is string && EsTextoHardcodeado(primerArg))
             {
                 return EsEspanol() ? primerArg : (string)args[0];
             }
 
-            // Firma nueva: tag + parámetros de formato
             string plantilla = T(primerArg);
             try
             {
@@ -101,12 +88,10 @@ namespace BLL
             }
         }
 
-        // Devuelve true si el string parece texto natural (firma vieja) en vez de un tag de BD
         private static bool EsTextoHardcodeado(string s)
         {
             if (string.IsNullOrEmpty(s)) return false;
-            // Tags de BD son snake_case sin espacios ni mayúsculas al inicio
-            // Textos hardcodeados tienen espacios, mayúsculas, signos, acentos, etc.
+
             if (s.Contains(" ") || s.Contains(".") || s.Contains("!") ||
                 s.Contains("?") || s.Contains(",") || s.Contains(":") ||
                 s.Contains("{") || s.Contains("¿") || s.Contains("¡"))
@@ -123,7 +108,6 @@ namespace BLL
             return n.Contains("espa") || n.Contains("esp");
         }
 
-        // ── Observer ───────────────────────────────────────────────────
         public void Suscribir(IObservadorIdioma obs)
         {
             if (!_observadores.Contains(obs)) _observadores.Add(obs);
@@ -140,7 +124,6 @@ namespace BLL
                 obs.ActualizarIdioma();
         }
 
-        // ── ABM de idiomas ─────────────────────────────────────────────
         public bool AgregarIdioma(string nombre, out string mensaje)
         {
             if (string.IsNullOrWhiteSpace(nombre))

@@ -11,7 +11,9 @@ namespace UI
         private UsuarioService service = new UsuarioService();
         private GestorIdioma gestor = GestorIdioma.Instancia;
         private Bitacora log = Bitacora.Instancia;
-        private Usuario _usuarioEditado;
+
+        private Usuario _usuarioEnlazar;
+        private bool _modoEnlazar;
 
         private TreeView treeArbol;
         private TreeView treePreview;
@@ -21,38 +23,40 @@ namespace UI
         private Button btnAgregar, btnAgregarFamilia, btnAgregarPariente;
         private Button btnEnlazarPariente, btnEliminarSeleccionado, btnGuardarFamilia;
 
+        private Button btnEnlazarUsuario;
+
         public FormComposite(Usuario usuario = null)
         {
-            _usuarioEditado = usuario ?? SesionManager.Instancia.ObtenerUsuarioActual();
-            InitializeComponent();
-            ConstruirUI();
-            CargarPermisosDelUsuario();
-            RefrescarArbol();
-            RefrescarListas();
-            gestor.Suscribir(this);
-        }
+            _usuarioEnlazar = usuario;
+            _modoEnlazar    = usuario != null;
 
-        private void CargarPermisosDelUsuario()
-        {
-            if (_usuarioEditado == null)
+            InitializeComponent();
+            service.CargarArbolGlobal();
+
+            if (_modoEnlazar)
             {
-                MessageBox.Show(gestor.T("No hay un usuario para editar permisos.", "No user selected to edit permissions."),
-                    gestor.T("Atención", "Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                ConstruirUIEnlazar();
+                RefrescarFamilias();
             }
-            service.CargarPermisosDeUsuario(_usuarioEditado.Id);
+            else
+            {
+                ConstruirUI();
+                RefrescarArbol();
+                RefrescarListas();
+            }
+
+            gestor.Suscribir(this);
         }
 
         private void ConstruirUI()
         {
-            string nombreUser = _usuarioEditado != null ? _usuarioEditado.NombreUsuario : "(sin usuario)";
-            this.Text = gestor.T("Administrar Composite - Usuario: ", "Manage Composite - User: ") + nombreUser;
+            this.Text = gestor.T("Administrar Composite (catálogo global)", "Manage Composite (global catalog)");
             this.Size = new System.Drawing.Size(1020, 640);
             this.MinimumSize = new System.Drawing.Size(1020, 640);
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = System.Drawing.Color.FromArgb(240, 244, 248);
 
-            lblUsuarioActual = new Label { Text = gestor.T("Editando permisos de: ", "Editing permissions for: ") + nombreUser, Location = new System.Drawing.Point(10, 8), Size = new System.Drawing.Size(990, 22), Font = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Bold), ForeColor = System.Drawing.Color.FromArgb(40, 70, 110) };
+            lblUsuarioActual = new Label { Text = gestor.T("Catálogo global de permisos", "Global permission catalog"), Location = new System.Drawing.Point(10, 8), Size = new System.Drawing.Size(990, 22), Font = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Bold), ForeColor = System.Drawing.Color.FromArgb(40, 70, 110) };
 
             var panelIzq = new Panel { Location = new System.Drawing.Point(10, 36), Size = new System.Drawing.Size(230, 555), BackColor = System.Drawing.Color.White, BorderStyle = BorderStyle.FixedSingle };
             treeArbol = new TreeView { Location = new System.Drawing.Point(2, 2), Size = new System.Drawing.Size(224, 549), BorderStyle = BorderStyle.None };
@@ -70,7 +74,6 @@ namespace UI
 
             int headerTop = 60, listaTop = 78, listaAlto = 370;
 
-            // Col3 (A eliminar) eliminada — Preview ocupa todo ese espacio
             lblCol1 = new Label { Text = gestor.T("Familias", "Families"),  Location = new System.Drawing.Point(8,   headerTop), Size = new System.Drawing.Size(220, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
             lblCol2 = new Label { Text = gestor.T("Parientes", "Members"),  Location = new System.Drawing.Point(236, headerTop), Size = new System.Drawing.Size(220, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
             lblCol4 = new Label { Text = "Preview",                          Location = new System.Drawing.Point(464, headerTop), Size = new System.Drawing.Size(280, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
@@ -92,12 +95,54 @@ namespace UI
             btnEliminarSeleccionado = ConstruirBoton(gestor.T("Eliminar seleccionado",      "Delete selected"),       464,   fila1, 280, 30, true);  btnEliminarSeleccionado.Click += BtnEliminarSeleccionado_Click;
             btnEnlazarPariente      = ConstruirBoton(gestor.T("Enlazar Pariente a Familia", "Link Member to Family"), 236,   fila2, 220, 30, false); btnEnlazarPariente.Click      += BtnEnlazarPariente_Click;
 
-            btnGuardarFamilia = new Button { Location = new System.Drawing.Point(464, fila2), Size = new System.Drawing.Size(280, 30), Text = gestor.T("💾  GUARDAR PERMISOS", "💾  SAVE PERMISSIONS"), FlatStyle = FlatStyle.Flat, BackColor = System.Drawing.Color.FromArgb(100, 180, 100), ForeColor = System.Drawing.Color.White, Font = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold) };
+            btnGuardarFamilia = new Button { Location = new System.Drawing.Point(464, fila2), Size = new System.Drawing.Size(280, 30), Text = gestor.T("💾  GUARDAR CATÁLOGO", "💾  SAVE CATALOG"), FlatStyle = FlatStyle.Flat, BackColor = System.Drawing.Color.FromArgb(100, 180, 100), ForeColor = System.Drawing.Color.White, Font = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold) };
             btnGuardarFamilia.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(60, 140, 60);
             btnGuardarFamilia.Click += BtnGuardarFamilia_Click;
 
             panelDer.Controls.AddRange(new Control[] { lblNueva, txtNueva, btnAgregar, lblCol1, lstFamilias, lblCol2, lstParientes, lblCol4, treePreview, btnAgregarFamilia, btnAgregarPariente, btnEnlazarPariente, btnEliminarSeleccionado, btnGuardarFamilia });
             this.Controls.AddRange(new Control[] { lblUsuarioActual, panelIzq, panelDer });
+        }
+
+        private void ConstruirUIEnlazar()
+        {
+            string nombreUser = _usuarioEnlazar != null ? _usuarioEnlazar.NombreUsuario : "(sin usuario)";
+            this.Text = gestor.T("Enlazar Familia - Usuario: ", "Link Family - User: ") + nombreUser;
+            this.Size = new System.Drawing.Size(420, 520);
+            this.MinimumSize = new System.Drawing.Size(420, 520);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.BackColor = System.Drawing.Color.FromArgb(240, 244, 248);
+
+            lblUsuarioActual = new Label { Text = gestor.T("Enlazando familia para: ", "Linking family for: ") + nombreUser, Location = new System.Drawing.Point(10, 8), Size = new System.Drawing.Size(390, 22), Font = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Bold), ForeColor = System.Drawing.Color.FromArgb(40, 70, 110) };
+
+            lblCol1 = new Label { Text = gestor.T("Familias", "Families"), Location = new System.Drawing.Point(10, 40), Size = new System.Drawing.Size(390, 16), Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
+
+            lstFamilias = new ListBox { Location = new System.Drawing.Point(10, 60), Size = new System.Drawing.Size(390, 380), BorderStyle = BorderStyle.FixedSingle, Font = new System.Drawing.Font("Segoe UI", 9), SelectionMode = SelectionMode.One };
+
+            btnEnlazarUsuario = new Button { Location = new System.Drawing.Point(10, 450), Size = new System.Drawing.Size(390, 34), Text = gestor.T("Enlazar con Usuario", "Link to User"), FlatStyle = FlatStyle.Flat, BackColor = System.Drawing.Color.FromArgb(100, 180, 100), ForeColor = System.Drawing.Color.White, Font = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold) };
+            btnEnlazarUsuario.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(60, 140, 60);
+            btnEnlazarUsuario.Click += BtnEnlazarUsuario_Click;
+
+            this.Controls.AddRange(new Control[] { lblUsuarioActual, lblCol1, lstFamilias, btnEnlazarUsuario });
+        }
+
+        private void BtnEnlazarUsuario_Click(object sender, EventArgs e)
+        {
+            string fs = lstFamilias.SelectedItem != null ? lstFamilias.SelectedItem.ToString() : null;
+            if (string.IsNullOrWhiteSpace(fs))
+            {
+                MessageBox.Show(gestor.T("Seleccioná una familia.", "Select a family."), gestor.T("Atención", "Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            Resultado res = service.EnlazarFamiliaConUsuario(fs, _usuarioEnlazar.Id);
+            if (res.Ok)
+            {
+                string operador = SesionManager.Instancia.ObtenerUsuarioActual() != null ? SesionManager.Instancia.ObtenerUsuarioActual().NombreUsuario : "desconocido";
+                log.PermisosGuardados(operador, _usuarioEnlazar.NombreUsuario, fs);
+            }
+            MessageBox.Show(res.Mensaje, res.Ok ? gestor.T("Éxito", "Success") : gestor.T("Error", "Error"),
+                MessageBoxButtons.OK, res.Ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+            if (res.Ok) this.Close();
         }
 
         private Button ConstruirBoton(string texto, int x, int y, int w, int h, bool esEliminar)
@@ -109,24 +154,35 @@ namespace UI
 
         public void ActualizarIdioma()
         {
-            string nombreUser      = _usuarioEditado != null ? _usuarioEditado.NombreUsuario : "";
-            this.Text              = gestor.T("Administrar Composite - Usuario: ", "Manage Composite - User: ") + nombreUser;
-            lblUsuarioActual.Text  = gestor.T("Editando permisos de: ", "Editing permissions for: ") + nombreUser;
-            lblNueva.Text          = gestor.T("Nueva familia / pariente:", "New family / member:");
-            lblCol1.Text           = gestor.T("Familias", "Families");
-            lblCol2.Text           = gestor.T("Parientes", "Members");
-            btnAgregar.Text        = gestor.T("Agregar familia + pariente", "Add family + member");
+            if (_modoEnlazar)
+            {
+                string nombreUser = _usuarioEnlazar != null ? _usuarioEnlazar.NombreUsuario : "";
+                this.Text             = gestor.T("Enlazar Familia - Usuario: ", "Link Family - User: ") + nombreUser;
+                lblUsuarioActual.Text = gestor.T("Enlazando familia para: ", "Linking family for: ") + nombreUser;
+                lblCol1.Text          = gestor.T("Familias", "Families");
+                btnEnlazarUsuario.Text = gestor.T("Enlazar con Usuario", "Link to User");
+                return;
+            }
+
+            this.Text              = gestor.T("Administrar Composite (catálogo global)", "Manage Composite (global catalog)");
+            lblUsuarioActual.Text   = gestor.T("Catálogo global de permisos", "Global permission catalog");
+            lblNueva.Text           = gestor.T("Nueva familia / pariente:", "New family / member:");
+            lblCol1.Text            = gestor.T("Familias", "Families");
+            lblCol2.Text            = gestor.T("Parientes", "Members");
+            btnAgregar.Text         = gestor.T("Agregar familia + pariente", "Add family + member");
             btnAgregarFamilia.Text  = gestor.T("Agregar Familia", "Add Family");
             btnAgregarPariente.Text = gestor.T("Agregar Pariente", "Add Member");
             btnEnlazarPariente.Text = gestor.T("Enlazar Pariente a Familia", "Link Member to Family");
             btnEliminarSeleccionado.Text = gestor.T("Eliminar seleccionado", "Delete selected");
-            btnGuardarFamilia.Text  = gestor.T("💾  GUARDAR PERMISOS", "💾  SAVE PERMISSIONS");
+            btnGuardarFamilia.Text  = gestor.T("💾  GUARDAR CATÁLOGO", "💾  SAVE CATALOG");
         }
 
         private void RefrescarArbol()
         {
             treeArbol.Nodes.Clear();
-            treeArbol.Nodes.Add(ArmarNodo(service.ObtenerArbol()));
+            GrupoPermiso raiz = service.ObtenerArbol();
+            foreach (var hijo in raiz.Hijos())
+                treeArbol.Nodes.Add(ArmarNodo(hijo));
             treeArbol.ExpandAll();
         }
 
@@ -138,21 +194,28 @@ namespace UI
             return nodo;
         }
 
-        private void RefrescarListas()
+        private void RefrescarFamilias()
         {
-            string fa = lstFamilias.SelectedItem  != null ? lstFamilias.SelectedItem.ToString()  : null;
-            string pa = lstParientes.SelectedItem != null ? lstParientes.SelectedItem.ToString() : null;
-            lstFamilias.Items.Clear(); lstParientes.Items.Clear();
+            string fa = lstFamilias.SelectedItem != null ? lstFamilias.SelectedItem.ToString() : null;
+            lstFamilias.Items.Clear();
             GrupoPermiso raiz = service.ObtenerArbol();
             RecolectarGrupos(raiz, lstFamilias);
+            if (fa != null && lstFamilias.Items.Contains(fa)) lstFamilias.SelectedItem = fa;
+        }
+
+        private void RefrescarListas()
+        {
+            RefrescarFamilias();
+            string pa = lstParientes.SelectedItem != null ? lstParientes.SelectedItem.ToString() : null;
+            lstParientes.Items.Clear();
+            GrupoPermiso raiz = service.ObtenerArbol();
             RecolectarHojas(raiz, lstParientes);
             foreach (string p in service.ObtenerParientesDisponibles())
                 if (!lstParientes.Items.Contains(p)) lstParientes.Items.Add(p);
-            if (fa != null && lstFamilias.Items.Contains(fa))  lstFamilias.SelectedItem  = fa;
             if (pa != null && lstParientes.Items.Contains(pa)) lstParientes.SelectedItem = pa;
         }
 
-        private void RecolectarGrupos(GrupoPermiso g, ListBox lb) { lb.Items.Add(g.Nombre); foreach (var h in g.Hijos()) { GrupoPermiso gg = h as GrupoPermiso; if (gg != null) RecolectarGrupos(gg, lb); } }
+        private void RecolectarGrupos(GrupoPermiso g, ListBox lb) { if (g.Nombre != "Raiz") lb.Items.Add(g.Nombre); foreach (var h in g.Hijos()) { GrupoPermiso gg = h as GrupoPermiso; if (gg != null) RecolectarGrupos(gg, lb); } }
         private void RecolectarHojas(GrupoPermiso g, ListBox lb)  { foreach (var h in g.Hijos()) { if (h is PermisoLeaf) { if (!lb.Items.Contains(h.Nombre)) lb.Items.Add(h.Nombre); } else { GrupoPermiso gg = h as GrupoPermiso; if (gg != null) RecolectarHojas(gg, lb); } } }
 
         private void ActualizarPreview()
@@ -182,7 +245,7 @@ namespace UI
         {
             string nn = txtNueva.Text.Trim(), pn = lstFamilias.SelectedItem != null ? lstFamilias.SelectedItem.ToString() : null, par = lstParientes.SelectedItem != null ? lstParientes.SelectedItem.ToString() : null;
             if (string.IsNullOrWhiteSpace(nn))  { MessageBox.Show(gestor.T("Escribí el nombre de la nueva familia.", "Enter the name of the new family."), gestor.T("Atención","Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            if (string.IsNullOrWhiteSpace(pn))  { MessageBox.Show(gestor.T("Seleccioná una familia padre.", "Select a parent family."), gestor.T("Atención","Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+
             Resultado res = service.AgregarFamilia(nn, pn);
             if (!res.Ok) { MessageBox.Show(res.Mensaje, gestor.T("Error","Error"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             if (!string.IsNullOrWhiteSpace(par)) { Resultado rp = service.AgregarPariente(par, nn); if (!rp.Ok) MessageBox.Show(gestor.T("Familia creada pero no se pudo agregar el pariente: ","Family created but member could not be added: ") + rp.Mensaje, gestor.T("Atención","Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning); }
@@ -194,7 +257,7 @@ namespace UI
         {
             string nn = txtNueva.Text.Trim(), pn = lstFamilias.SelectedItem != null ? lstFamilias.SelectedItem.ToString() : null;
             if (string.IsNullOrWhiteSpace(nn)) { MessageBox.Show(gestor.T("Escribí el nombre de la nueva familia.", "Enter the name of the new family."), gestor.T("Atención","Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            if (string.IsNullOrWhiteSpace(pn)) { MessageBox.Show(gestor.T("Seleccioná una familia padre.", "Select a parent family."), gestor.T("Atención","Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+
             Resultado res = service.AgregarFamilia(nn, pn);
             MessageBox.Show(res.Mensaje, res.Ok ? gestor.T("Éxito","Success") : gestor.T("Error","Error"), MessageBoxButtons.OK, res.Ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
             if (res.Ok) { txtNueva.Clear(); RefrescarArbol(); RefrescarListas(); ActualizarPreview(); }
@@ -236,14 +299,7 @@ namespace UI
 
         private void BtnGuardarFamilia_Click(object sender, EventArgs e)
         {
-            if (_usuarioEditado == null) { MessageBox.Show(gestor.T("No hay un usuario para guardar permisos.", "No user to save permissions for."), gestor.T("Error","Error"), MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            string tipoPermiso = service.ObtenerTipoPermiso();
-            Resultado res = service.GuardarPermisosDeUsuario(tipoPermiso);
-            if (res.Ok)
-            {
-                string operador = SesionManager.Instancia.ObtenerUsuarioActual() != null ? SesionManager.Instancia.ObtenerUsuarioActual().NombreUsuario : "desconocido";
-                log.PermisosGuardados(operador, _usuarioEditado.NombreUsuario, tipoPermiso);
-            }
+            Resultado res = service.GuardarArbolGlobal();
             MessageBox.Show(res.Mensaje, res.Ok ? gestor.T("Guardar","Save") : gestor.T("Error","Error"),
                 MessageBoxButtons.OK, res.Ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }

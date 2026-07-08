@@ -49,7 +49,6 @@ namespace UI
             this.Font            = new Font("Segoe UI", 9);
             this.BackColor       = Color.FromArgb(245, 246, 250);
 
-            // Título
             lblTitulo           = new Label();
             lblTitulo.Text      = "Control de Cambios de Claves";
             lblTitulo.Font      = new Font("Segoe UI", 14, FontStyle.Bold);
@@ -57,7 +56,6 @@ namespace UI
             lblTitulo.Location  = new Point(16, 12);
             lblTitulo.AutoSize  = true;
 
-            // Aviso informativo
             lblAviso           = new Label();
             lblAviso.Text      = "Solo se pueden restaurar claves que tuvieron al menos una modificacion posterior al alta.";
             lblAviso.ForeColor = Color.FromArgb(120, 80, 0);
@@ -65,7 +63,6 @@ namespace UI
             lblAviso.AutoSize  = true;
             lblAviso.Font      = new Font("Segoe UI", 8, FontStyle.Italic);
 
-            // Fila 1: filtros
             lblFiltroUsuario           = new Label();
             lblFiltroUsuario.Text      = "Usuario:";
             lblFiltroUsuario.Location  = new Point(16, 72);
@@ -120,7 +117,6 @@ namespace UI
             btnFiltrar.Click += (s, e) => AplicarFiltro();
             btnLimpiar.Click += BtnLimpiar_Click;
 
-            // Grilla
             grid                       = new DataGridView();
             grid.Location              = new Point(16, 106);
             grid.Size                  = new Size(948, 408);
@@ -138,7 +134,6 @@ namespace UI
             grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             grid.CellFormatting       += Grid_CellFormatting;
 
-            // Columna oculta para guardar el índice del registro
             var cHid = new DataGridViewTextBoxColumn(); cHid.Name = "ColId";       cHid.HeaderText = "ID";       cHid.Visible = false; grid.Columns.Add(cHid);
             var cHid2= new DataGridViewTextBoxColumn(); cHid2.Name= "ColIdUsr";    cHid2.HeaderText= "IdUsr";    cHid2.Visible= false; grid.Columns.Add(cHid2);
             var cHid3= new DataGridViewTextBoxColumn(); cHid3.Name= "ColHash";     cHid3.HeaderText= "Hash";     cHid3.Visible= false; grid.Columns.Add(cHid3);
@@ -149,7 +144,6 @@ namespace UI
             var c4 = new DataGridViewTextBoxColumn(); c4.Name = "ColEvento";  c4.HeaderText = "Evento";        c4.FillWeight = 16; grid.Columns.Add(c4);
             var c5 = new DataGridViewTextBoxColumn(); c5.Name = "ColClave";   c5.HeaderText = "Clave (hash)";  c5.FillWeight = 30; grid.Columns.Add(c5);
 
-            // Botones inferiores
             lblTotal           = new Label();
             lblTotal.Location  = new Point(16, 524);
             lblTotal.Size      = new Size(550, 20);
@@ -191,7 +185,6 @@ namespace UI
             return btn;
         }
 
-        // ── Carga ──────────────────────────────────────────────────────
         private void CargarDatos()
         {
             _todos = _dal.ObtenerHistorialClaves();
@@ -209,7 +202,6 @@ namespace UI
             AplicarFiltro();
         }
 
-        // ── Filtrado ───────────────────────────────────────────────────
         private void AplicarFiltro()
         {
             string usuario = cmbUsuario.SelectedIndex > 0 ? cmbUsuario.SelectedItem.ToString() : "";
@@ -252,7 +244,6 @@ namespace UI
             AplicarFiltro();
         }
 
-        // ── Restaurar ──────────────────────────────────────────────────
         private void BtnRestaurar_Click(object sender, EventArgs e)
         {
             if (grid.SelectedRows.Count == 0)
@@ -262,25 +253,24 @@ namespace UI
                 return;
             }
 
-            var fila    = grid.SelectedRows[0];
-            string evento = fila.Cells["ColEvento"].Value.ToString();
+            var fila = grid.SelectedRows[0];
+            int idRegistro = (int)fila.Cells["ColId"].Value;
 
-            // Solo se puede restaurar si hubo una modificacion (no tiene sentido restaurar el alta si es la unica version)
-            int idUsuario     = (int)fila.Cells["ColIdUsr"].Value;
-            string nomUsuario = fila.Cells["ColUsuario"].Value.ToString();
-            string claveHash  = fila.Cells["ColHash"].Value.ToString();
-            string fechaStr   = fila.Cells["ColFecha"].Value.ToString();
-
-            // Verificar que existe al menos otro registro posterior para ese usuario
-            bool hayVersionPosterior = false;
-            foreach (var r in _todos)
+            RegistroClave registro = _todos.Find(r => r.Id == idRegistro);
+            if (registro == null)
             {
-                if (r.IdUsuario == idUsuario && r.Fecha > DateTime.Parse(fechaStr))
-                {
-                    hayVersionPosterior = true;
-                    break;
-                }
+                MessageBox.Show("No se encontro el registro seleccionado.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
+
+            int idUsuario      = registro.IdUsuario;
+            string nomUsuario  = registro.NombreUsuario;
+            string claveHash   = registro.ClaveHash;
+            DateTime fecha     = registro.Fecha;
+            string fechaStr    = fecha.ToString("dd/MM/yyyy HH:mm:ss");
+
+            bool hayVersionPosterior = _todos.Exists(r => r.IdUsuario == idUsuario && r.Fecha > fecha);
 
             if (!hayVersionPosterior)
             {
@@ -308,7 +298,7 @@ namespace UI
                 _log.Info("CLAVE", "'" + operador + "' restauro la clave de '" + nomUsuario + "' al estado del " + fechaStr + ".");
                 MessageBox.Show("Clave restaurada correctamente.", "Exito",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
-                CargarDatos(); // refresca con el nuevo registro de RESTAURACION
+                CargarDatos();
             }
             else
             {
@@ -317,7 +307,6 @@ namespace UI
             }
         }
 
-        // ── Colores por evento ─────────────────────────────────────────
         private void Grid_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0 || e.RowIndex >= grid.RowCount) return;

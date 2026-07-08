@@ -15,7 +15,6 @@ namespace DAL
             _conn = ConfigurationManager.ConnectionStrings["BaseDatos"].ConnectionString;
         }
 
-        // ── Inicialización ─────────────────────────────────────────────
         public void InicializarTablas()
         {
             using (var con = new SqlConnection(_conn))
@@ -24,7 +23,11 @@ namespace DAL
 
                 Ejecutar(con,
                     "IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Idiomas' AND xtype='U') " +
-                    "CREATE TABLE Idiomas (Id INT IDENTITY(1,1) PRIMARY KEY, Nombre NVARCHAR(100) NOT NULL UNIQUE)");
+                    "CREATE TABLE Idiomas (Id INT IDENTITY(1,1) PRIMARY KEY, Nombre NVARCHAR(100) NOT NULL UNIQUE, Codigo NVARCHAR(20) NULL)");
+
+                Ejecutar(con,
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = 'Codigo' AND Object_ID = Object_ID('Idiomas')) " +
+                    "ALTER TABLE Idiomas ADD Codigo NVARCHAR(20) NULL");
 
                 Ejecutar(con,
                     "IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Palabras' AND xtype='U') " +
@@ -40,11 +43,11 @@ namespace DAL
                     "  CONSTRAINT FK_Trad_Idioma  FOREIGN KEY (IdIdioma) REFERENCES Idiomas(Id)   ON DELETE CASCADE," +
                     "  CONSTRAINT FK_Trad_Palabra FOREIGN KEY (Tag)      REFERENCES Palabras(Tag) ON DELETE CASCADE)");
 
-                // Idiomas semilla
                 Ejecutar(con, "IF NOT EXISTS (SELECT 1 FROM Idiomas WHERE Nombre='Espanol') INSERT INTO Idiomas(Nombre) VALUES('Espanol')");
                 Ejecutar(con, "IF NOT EXISTS (SELECT 1 FROM Idiomas WHERE Nombre='Ingles')  INSERT INTO Idiomas(Nombre) VALUES('Ingles')");
 
-                // Tags semilla
+                GenerarCodigosFaltantes(con);
+
                 string[] tags = {
                     "btn_login", "btn_usuarios", "btn_logout", "btn_composite",
                     "lbl_usuario", "lbl_clave", "msg_bienvenido", "msg_acceso_ok",
@@ -55,7 +58,6 @@ namespace DAL
                 foreach (var tag in tags)
                     Ejecutar(con, "IF NOT EXISTS (SELECT 1 FROM Palabras WHERE Tag='" + tag + "') INSERT INTO Palabras(Tag) VALUES('" + tag + "')");
 
-                // Traducciones semilla — Espanol
                 var esp = new Dictionary<string, string>();
                 esp.Add("btn_login",        "Iniciar sesion");
                 esp.Add("btn_usuarios",     "Administrar Usuarios");
@@ -76,7 +78,6 @@ namespace DAL
                 esp.Add("composite_titulo", "Administrar Composite");
                 SembrarIdioma(con, "Espanol", esp);
 
-                // Traducciones semilla — Ingles
                 var eng = new Dictionary<string, string>();
                 eng.Add("btn_login",        "Log in");
                 eng.Add("btn_usuarios",     "Manage Users");
@@ -99,17 +100,21 @@ namespace DAL
             }
         }
 
-        // ── Idiomas CRUD ───────────────────────────────────────────────
         public List<Idioma> ObtenerIdiomas()
         {
             var lista = new List<Idioma>();
             using (var con = new SqlConnection(_conn))
             {
                 con.Open();
-                using (var cmd = new SqlCommand("SELECT Id, Nombre FROM Idiomas ORDER BY Id", con))
+                using (var cmd = new SqlCommand("SELECT Id, Nombre, Codigo FROM Idiomas ORDER BY Id", con))
                 using (var r = cmd.ExecuteReader())
                     while (r.Read())
-                        lista.Add(new Idioma { Id = (int)r["Id"], Nombre = r["Nombre"].ToString() });
+                        lista.Add(new Idioma
+                        {
+                            Id     = (int)r["Id"],
+                            Nombre = r["Nombre"].ToString(),
+                            Codigo = r["Codigo"] == DBNull.Value ? null : r["Codigo"].ToString()
+                        });
             }
             return lista;
         }
@@ -127,6 +132,16 @@ namespace DAL
                         cmd.Parameters.AddWithValue("@n", nombre);
                         nuevoId = (int)cmd.ExecuteScalar();
                     }
+
+                    string codigoBase = nuevoId.ToString("D4");
+                    string codigo = DigitoVerificador.GenerarCodigoConDV(codigoBase);
+                    using (var cmd = new SqlCommand("UPDATE Idiomas SET Codigo = @c WHERE Id = @id", con))
+                    {
+                        cmd.Parameters.AddWithValue("@c", codigo);
+                        cmd.Parameters.AddWithValue("@id", nuevoId);
+                        cmd.ExecuteNonQuery();
+                    }
+
                     var tags = new List<string>();
                     using (var cmd = new SqlCommand("SELECT Tag FROM Palabras", con))
                     using (var r = cmd.ExecuteReader())
@@ -186,7 +201,6 @@ namespace DAL
             catch { return false; }
         }
 
-        // ── Traducciones ───────────────────────────────────────────────
         public Dictionary<string, string> ObtenerTraducciones(int idIdioma)
         {
             var dic = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -234,7 +248,32 @@ namespace DAL
             catch { return false; }
         }
 
-        // ── Helpers ────────────────────────────────────────────────────
+        public static bool ValidarCodigo(string codigo)
+        {
+            return DigitoVerificador.Validar(codigo);
+        }
+
+        private static void GenerarCodigosFaltantes(SqlConnection con)
+        {
+            var pendientes = new List<int>();
+            using (var cmd = new SqlCommand("SELECT Id FROM Idiomas WHERE Codigo IS NULL OR Codigo = ''", con))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read())
+                    pendientes.Add((int)r["Id"]);
+
+            foreach (int id in pendientes)
+            {
+                string codigoBase = id.ToString("D4");
+                string codigo = DigitoVerificador.GenerarCodigoConDV(codigoBase);
+                using (var cmd = new SqlCommand("UPDATE Idiomas SET Codigo = @c WHERE Id = @id", con))
+                {
+                    cmd.Parameters.AddWithValue("@c", codigo);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
         private static void Ejecutar(SqlConnection con, string sql)
         {
             using (var cmd = new SqlCommand(sql, con))

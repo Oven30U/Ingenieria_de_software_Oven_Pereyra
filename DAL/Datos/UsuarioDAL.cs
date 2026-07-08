@@ -11,6 +11,9 @@ namespace DAL
     public class UsuarioDAL
     {
         private string connectionString;
+        private const string SELECT_COLUMNAS =
+            "Id, Usuario, Clave, Rol, TipoPermiso, " +
+            "CASE WHEN EXISTS (SELECT 1 FROM Usuario_Permiso up WHERE up.IdUsuario = Usuarios.Id) THEN 1 ELSE 0 END AS TienePermisos";
 
         public UsuarioDAL()
         {
@@ -36,24 +39,20 @@ namespace DAL
             {
                 con.Open();
 
-                // Tabla Usuarios
                 string crearTabla = @"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Usuarios' AND xtype='U')
                     CREATE TABLE Usuarios (
                         Id INT IDENTITY(1,1) PRIMARY KEY,
                         Usuario NVARCHAR(100) NOT NULL UNIQUE,
                         Clave NVARCHAR(64) NOT NULL,
                         Rol NVARCHAR(50) NOT NULL DEFAULT 'usuario',
-                        Permisos NVARCHAR(MAX) NULL,
                         TipoPermiso NVARCHAR(100) NULL
                     );";
                 using (var cmd = new SqlCommand(crearTabla, con))
                     cmd.ExecuteNonQuery();
 
                 EjecutarSiNoExisteColumna(con, "Rol",        "ALTER TABLE Usuarios ADD Rol NVARCHAR(50) NOT NULL DEFAULT 'usuario';");
-                EjecutarSiNoExisteColumna(con, "Permisos",   "ALTER TABLE Usuarios ADD Permisos NVARCHAR(MAX) NULL;");
                 EjecutarSiNoExisteColumna(con, "TipoPermiso","ALTER TABLE Usuarios ADD TipoPermiso NVARCHAR(100) NULL;");
 
-                // Tabla HistorialClaves
                 string crearHistorial = @"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='HistorialClaves' AND xtype='U')
                     CREATE TABLE HistorialClaves (
                         Id          INT IDENTITY(1,1) PRIMARY KEY,
@@ -68,7 +67,6 @@ namespace DAL
                 using (var cmd = new SqlCommand(crearHistorial, con))
                     cmd.ExecuteNonQuery();
 
-                // Usuario admin por defecto
                 string hashAdmin = HashSHA256("admin123");
                 string crearAdmin = @"IF NOT EXISTS (SELECT * FROM Usuarios WHERE Usuario = 'admin')
                     INSERT INTO Usuarios (Usuario, Clave, Rol) VALUES ('admin', @hash, 'admin');";
@@ -84,6 +82,8 @@ namespace DAL
                     cmd.ExecuteNonQuery();
                 }
             }
+
+            new PermisoDAL().CrearTablasSiNoExisten();
         }
 
         private void EjecutarSiNoExisteColumna(SqlConnection con, string columna, string sql)
@@ -106,19 +106,18 @@ namespace DAL
                 NombreUsuario = reader["Usuario"].ToString(),
                 Clave         = reader["Clave"].ToString(),
                 Rol           = reader["Rol"].ToString(),
-                Permisos      = reader["Permisos"]    == DBNull.Value ? null : reader["Permisos"].ToString(),
-                TipoPermiso   = reader["TipoPermiso"] == DBNull.Value ? null : reader["TipoPermiso"].ToString()
+                TipoPermiso   = reader["TipoPermiso"] == DBNull.Value ? null : reader["TipoPermiso"].ToString(),
+                TienePermisos = reader["TienePermisos"] != DBNull.Value && (int)reader["TienePermisos"] == 1
             };
         }
 
-        // ── Login / listado ────────────────────────────────────────────
         public Usuario Login(string nombreUsuario, string clave)
         {
             string hash = HashSHA256(clave);
             using (var con = new SqlConnection(connectionString))
             {
                 con.Open();
-                string sql = "SELECT Id, Usuario, Clave, Rol, Permisos, TipoPermiso FROM Usuarios WHERE Usuario = @usuario AND Clave = @clave";
+                string sql = $"SELECT {SELECT_COLUMNAS} FROM Usuarios WHERE Usuario = @usuario AND Clave = @clave";
                 using (var cmd = new SqlCommand(sql, con))
                 {
                     cmd.Parameters.AddWithValue("@usuario", nombreUsuario);
@@ -136,7 +135,7 @@ namespace DAL
             using (var con = new SqlConnection(connectionString))
             {
                 con.Open();
-                string sql = "SELECT Id, Usuario, Clave, Rol, Permisos, TipoPermiso FROM Usuarios ORDER BY Id";
+                string sql = $"SELECT {SELECT_COLUMNAS} FROM Usuarios ORDER BY Id";
                 using (var cmd = new SqlCommand(sql, con))
                 using (var reader = cmd.ExecuteReader())
                     while (reader.Read())
@@ -150,7 +149,7 @@ namespace DAL
             using (var con = new SqlConnection(connectionString))
             {
                 con.Open();
-                string sql = "SELECT Id, Usuario, Clave, Rol, Permisos, TipoPermiso FROM Usuarios WHERE Id = @id";
+                string sql = $"SELECT {SELECT_COLUMNAS} FROM Usuarios WHERE Id = @id";
                 using (var cmd = new SqlCommand(sql, con))
                 {
                     cmd.Parameters.AddWithValue("@id", id);
@@ -161,13 +160,12 @@ namespace DAL
             return null;
         }
 
-        // ── CRUD con historial ─────────────────────────────────────────
-        public bool Agregar(Usuario usuario)
+        public int Agregar(Usuario usuario)
         {
             return Agregar(usuario, "sistema");
         }
 
-        public bool Agregar(Usuario usuario, string operador)
+        public int Agregar(Usuario usuario, string operador)
         {
             try
             {
@@ -176,25 +174,24 @@ namespace DAL
                     con.Open();
                     string hashClave = HashSHA256(usuario.Clave);
 
-                    string sql = "INSERT INTO Usuarios (Usuario, Clave, Rol, Permisos, TipoPermiso) " +
+                    string sql = "INSERT INTO Usuarios (Usuario, Clave, Rol, TipoPermiso) " +
                                  "OUTPUT INSERTED.Id " +
-                                 "VALUES (@usuario, @clave, @rol, @permisos, @tipo)";
+                                 "VALUES (@usuario, @clave, @rol, @tipo)";
                     int nuevoId;
                     using (var cmd = new SqlCommand(sql, con))
                     {
-                        cmd.Parameters.AddWithValue("@usuario",  usuario.NombreUsuario);
-                        cmd.Parameters.AddWithValue("@clave",    hashClave);
-                        cmd.Parameters.AddWithValue("@rol",      usuario.Rol);
-                        cmd.Parameters.AddWithValue("@permisos", string.IsNullOrEmpty(usuario.Permisos)    ? (object)DBNull.Value : usuario.Permisos);
-                        cmd.Parameters.AddWithValue("@tipo",     string.IsNullOrEmpty(usuario.TipoPermiso) ? (object)DBNull.Value : usuario.TipoPermiso);
+                        cmd.Parameters.AddWithValue("@usuario", usuario.NombreUsuario);
+                        cmd.Parameters.AddWithValue("@clave",   hashClave);
+                        cmd.Parameters.AddWithValue("@rol",     usuario.Rol);
+                        cmd.Parameters.AddWithValue("@tipo",    string.IsNullOrEmpty(usuario.TipoPermiso) ? (object)DBNull.Value : usuario.TipoPermiso);
                         nuevoId = (int)cmd.ExecuteScalar();
                     }
 
                     RegistrarHistorial(con, nuevoId, usuario.NombreUsuario, operador, "ALTA", hashClave);
+                    return nuevoId;
                 }
-                return true;
             }
-            catch { return false; }
+            catch { return -1; }
         }
 
         public bool Modificar(Usuario usuario, string nuevaClave)
@@ -241,19 +238,18 @@ namespace DAL
             catch { return false; }
         }
 
-        public bool ActualizarPermisos(int idUsuario, string permisos, string tipoPermiso)
+        public bool ActualizarTipoPermiso(int idUsuario, string tipoPermiso)
         {
             try
             {
                 using (var con = new SqlConnection(connectionString))
                 {
                     con.Open();
-                    string sql = "UPDATE Usuarios SET Permisos = @permisos, TipoPermiso = @tipo WHERE Id = @id";
+                    string sql = "UPDATE Usuarios SET TipoPermiso = @tipo WHERE Id = @id";
                     using (var cmd = new SqlCommand(sql, con))
                     {
-                        cmd.Parameters.AddWithValue("@id",       idUsuario);
-                        cmd.Parameters.AddWithValue("@permisos", string.IsNullOrEmpty(permisos)    ? (object)DBNull.Value : permisos);
-                        cmd.Parameters.AddWithValue("@tipo",     string.IsNullOrEmpty(tipoPermiso) ? (object)DBNull.Value : tipoPermiso);
+                        cmd.Parameters.AddWithValue("@id",   idUsuario);
+                        cmd.Parameters.AddWithValue("@tipo", string.IsNullOrEmpty(tipoPermiso) ? (object)DBNull.Value : tipoPermiso);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -294,8 +290,6 @@ namespace DAL
                 }
             }
         }
-
-        // ── Historial de claves ────────────────────────────────────────
 
         private void RegistrarHistorial(SqlConnection con, int idUsuario, string nombreUsuario,
             string operador, string evento, string claveHash)
@@ -338,7 +332,6 @@ namespace DAL
             return lista;
         }
 
-        /// <summary>Restaura la clave de un usuario al hash indicado y registra el evento.</summary>
         public bool RestaurarClave(int idUsuario, string nombreUsuario, string claveHash, string operador)
         {
             try
@@ -372,7 +365,6 @@ namespace DAL
         }
     }
 
-    // ── Modelo para el historial ───────────────────────────────────────
     public class RegistroClave
     {
         public int      Id            { get; set; }

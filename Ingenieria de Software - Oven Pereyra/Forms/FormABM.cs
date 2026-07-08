@@ -17,7 +17,7 @@ namespace UI
         private DataGridView grilla;
         private TextBox txtUsuario, txtClave;
         private ComboBox cmbRol;
-        private Button btnAgregar, btnModificar, btnEliminar, btnLimpiar, btnPermisos;
+        private Button btnAgregar, btnModificar, btnEliminar, btnLimpiar, btnPermisos, btnEliminarPermisos;
         private Label lblUsuario, lblClave, lblRol, lblTitulo;
 
         public FormABM()
@@ -49,6 +49,7 @@ namespace UI
             btnEliminar  = new Button { Text = gestor.T("Eliminar", "Delete"),  Location = new System.Drawing.Point(240, 135), Size = new System.Drawing.Size(100, 30) };
             btnLimpiar   = new Button { Text = gestor.T("Limpiar", "Clear"),    Location = new System.Drawing.Point(350, 135), Size = new System.Drawing.Size(100, 30) };
             btnPermisos  = new Button { Text = gestor.T("Editar Permisos", "Edit Permissions"), Location = new System.Drawing.Point(460, 135), Size = new System.Drawing.Size(130, 30), BackColor = System.Drawing.Color.FromArgb(180, 220, 180) };
+            btnEliminarPermisos = new Button { Text = gestor.T("Eliminar Permisos", "Remove Permissions"), Location = new System.Drawing.Point(600, 135), Size = new System.Drawing.Size(130, 30), BackColor = System.Drawing.Color.FromArgb(220, 90, 90), ForeColor = System.Drawing.Color.White, Font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold) };
 
             grilla = new DataGridView
             {
@@ -65,12 +66,13 @@ namespace UI
             btnEliminar.Click  += BtnEliminar_Click;
             btnLimpiar.Click   += BtnLimpiar_Click;
             btnPermisos.Click  += BtnPermisos_Click;
+            btnEliminarPermisos.Click += BtnEliminarPermisos_Click;
             grilla.CellClick   += Grilla_CellClick;
 
             this.Controls.AddRange(new Control[] {
                 lblTitulo, lblUsuario, txtUsuario, lblClave, txtClave,
                 lblRol, cmbRol, btnAgregar, btnModificar, btnEliminar,
-                btnLimpiar, btnPermisos, grilla
+                btnLimpiar, btnPermisos, btnEliminarPermisos, grilla
             });
         }
 
@@ -86,10 +88,10 @@ namespace UI
             btnEliminar.Text     = gestor.T("Eliminar", "Delete");
             btnLimpiar.Text      = gestor.T("Limpiar", "Clear");
             btnPermisos.Text     = gestor.T("Editar Permisos", "Edit Permissions");
+            btnEliminarPermisos.Text = gestor.T("Eliminar Permisos", "Remove Permissions");
 
             if (grilla.Columns.Contains("NombreUsuario"))    grilla.Columns["NombreUsuario"].HeaderText    = gestor.T("Usuario", "Username");
             if (grilla.Columns.Contains("Rol"))               grilla.Columns["Rol"].HeaderText               = gestor.T("Rol", "Role");
-            if (grilla.Columns.Contains("ColTienePermisos")) grilla.Columns["ColTienePermisos"].HeaderText  = gestor.T("Permisos", "Permissions");
             if (grilla.Columns.Contains("TipoPermiso"))      grilla.Columns["TipoPermiso"].HeaderText       = gestor.T("Tipo Permiso", "Permission Type");
         }
 
@@ -100,32 +102,9 @@ namespace UI
             if (grilla.Columns.Contains("Id"))            grilla.Columns["Id"].HeaderText            = "ID";
             if (grilla.Columns.Contains("NombreUsuario")) grilla.Columns["NombreUsuario"].HeaderText  = gestor.T("Usuario", "Username");
             if (grilla.Columns.Contains("Clave"))         grilla.Columns["Clave"].Visible             = false;
-            if (grilla.Columns.Contains("Permisos"))      grilla.Columns["Permisos"].Visible          = false;
+            if (grilla.Columns.Contains("TienePermisos")) grilla.Columns["TienePermisos"].Visible     = false;
             if (grilla.Columns.Contains("Rol"))           grilla.Columns["Rol"].HeaderText            = gestor.T("Rol", "Role");
             if (grilla.Columns.Contains("TipoPermiso"))   grilla.Columns["TipoPermiso"].HeaderText    = gestor.T("Tipo Permiso", "Permission Type");
-            AgregarColumnaTienePermisos(lista);
-        }
-
-        private void AgregarColumnaTienePermisos(List<Usuario> lista)
-        {
-            if (grilla.Columns.Contains("ColTienePermisos"))
-                grilla.Columns.Remove("ColTienePermisos");
-
-            var col = new DataGridViewTextBoxColumn
-            {
-                Name       = "ColTienePermisos",
-                HeaderText = gestor.T("Permisos", "Permissions"),
-                ReadOnly   = true
-            };
-            grilla.Columns.Add(col);
-
-            for (int i = 0; i < lista.Count && i < grilla.Rows.Count; i++)
-            {
-                bool tiene = !string.IsNullOrWhiteSpace(lista[i].Permisos);
-                grilla.Rows[i].Cells["ColTienePermisos"].Value = tiene
-                    ? gestor.T("Si", "Yes")
-                    : gestor.T("No", "No");
-            }
         }
 
         private void Grilla_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -222,6 +201,33 @@ namespace UI
             using (var form = new FormComposite(uSel))
                 form.ShowDialog(this);
             CargarGrilla();
+        }
+
+        private void BtnEliminarPermisos_Click(object sender, EventArgs e)
+        {
+            if (idSeleccionado == -1)
+            {
+                MessageBox.Show(gestor.T("Seleccioná un usuario de la grilla.", "Select a user from the list."),
+                    gestor.T("Atención", "Warning"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            var confirm = MessageBox.Show(
+                gestor.T($"¿Seguro que querés quitarle la familia de permisos a '{usuarioSeleccionado}'?", $"Are you sure you want to remove the permission family from '{usuarioSeleccionado}'?"),
+                gestor.T("Confirmar", "Confirm"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (confirm == DialogResult.Yes)
+            {
+                string operador = SesionManager.Instancia.ObtenerUsuarioActual()?.NombreUsuario ?? "desconocido";
+                Resultado res = service.EliminarPermisosDeUsuario(idSeleccionado);
+                if (res.Ok)
+                    log.PermisosGuardados(operador, usuarioSeleccionado, "(sin permisos)");
+                else
+                    log.Advertencia("ABM", $"'{operador}' intento quitar permisos a '{usuarioSeleccionado}' pero fallo: {res.Mensaje}");
+
+                MessageBox.Show(res.Mensaje, res.Ok ? gestor.T("Éxito", "Success") : gestor.T("Error", "Error"),
+                    MessageBoxButtons.OK, res.Ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                if (res.Ok) { Limpiar(); CargarGrilla(); }
+            }
         }
 
         private void BtnLimpiar_Click(object sender, EventArgs e) => Limpiar();

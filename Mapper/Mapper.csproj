@@ -37,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Idioma.cs" />
+    <Compile Include="DigitoVerificador.cs" />
     <Compile Include="Modelos\GrupoPermiso.cs" />
     <Compile Include="Modelos\IComponentePermiso.cs" />
     <Compile Include="Modelos\IObservadorIdioma.cs" />

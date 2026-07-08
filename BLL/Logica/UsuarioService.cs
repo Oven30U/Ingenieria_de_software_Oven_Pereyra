@@ -7,8 +7,8 @@ namespace BLL
     public class UsuarioService
     {
         private UsuarioDAL _dao = new UsuarioDAL();
+        private PermisoDAL _permisoDao = new PermisoDAL();
         private GrupoPermiso _arbol = null;
-        private int _idUsuarioPermisos = -1;
 
         public string Login(string nombreUsuario, string clave)
         {
@@ -36,18 +36,15 @@ namespace BLL
             if (_dao.ExisteUsuario(nombreUsuario))
                 return new Resultado(false, "Ya existe un usuario con ese nombre.");
 
-            var arbolDefault = ConstruirArbolDefault();
             var usuario = new Usuario
             {
                 NombreUsuario = nombreUsuario,
                 Clave = clave,
-                Rol = rol,
-                Permisos = PermisoSerializer.Serializar(arbolDefault),
-                TipoPermiso = ObtenerNombreFamiliaPrincipal(arbolDefault)
+                Rol = rol
             };
 
-            bool ok = _dao.Agregar(usuario);
-            return ok
+            int nuevoId = _dao.Agregar(usuario);
+            return nuevoId >= 0
                 ? new Resultado(true, "Usuario agregado correctamente.")
                 : new Resultado(false, "Error al agregar el usuario.");
         }
@@ -73,53 +70,43 @@ namespace BLL
                 : new Resultado(false, "Error al eliminar el usuario.");
         }
 
-        // ── Composite ────────────────────────────────────────────────────────
-
-        public GrupoPermiso CargarPermisosDeUsuario(int idUsuario)
+        public GrupoPermiso CargarArbolGlobal()
         {
-            _idUsuarioPermisos = idUsuario;
             _parientesDisponibles = new List<string>();
-
-            Usuario u = _dao.ObtenerPorId(idUsuario);
-            if (u != null && !string.IsNullOrWhiteSpace(u.Permisos))
-            {
-                _arbol = PermisoSerializer.Deserializar(u.Permisos);
-                if (_arbol == null) _arbol = ConstruirArbolDefault();
-            }
-            else
-            {
+            _arbol = _permisoDao.CargarArbolGlobal();
+            if (_arbol == null || _arbol.Hijos().Count == 0)
                 _arbol = ConstruirArbolDefault();
-            }
             return _arbol;
         }
 
-        /// <summary>
-        /// Devuelve el nombre del primer hijo directo de Raiz (la familia principal).
-        /// Eso es lo que se guarda en TipoPermiso.
-        /// </summary>
-        public string ObtenerTipoPermiso()
+        public Resultado GuardarArbolGlobal()
         {
-            var raiz = ObtenerArbol();
-            var hijos = raiz.Hijos();
-            if (hijos.Count > 0)
-            {
-                GrupoPermiso primerHijo = hijos[0] as GrupoPermiso;
-                if (primerHijo != null) return primerHijo.Nombre;
-                return hijos[0].Nombre;
-            }
-            return null;
+            if (_arbol == null)
+                return new Resultado(false, "No hay un catálogo cargado para guardar.");
+
+            bool ok = _permisoDao.GuardarArbolGlobal(_arbol);
+            return ok
+                ? new Resultado(true, "Catálogo de permisos guardado correctamente.")
+                : new Resultado(false, "Error al guardar el catálogo de permisos.");
         }
 
-        public Resultado GuardarPermisosDeUsuario(string tipoPermiso)
+        public Resultado EnlazarFamiliaConUsuario(string nombreFamilia, int idUsuario)
         {
-            if (_idUsuarioPermisos < 0 || _arbol == null)
-                return new Resultado(false, "No hay un usuario cargado para guardar sus permisos.");
+            if (string.IsNullOrWhiteSpace(nombreFamilia))
+                return new Resultado(false, "Seleccioná una familia.");
 
-            string serializado = PermisoSerializer.Serializar(_arbol);
-            bool ok = _dao.ActualizarPermisos(_idUsuarioPermisos, serializado, tipoPermiso);
+            bool ok = _dao.ActualizarTipoPermiso(idUsuario, nombreFamilia);
             return ok
-                ? new Resultado(true, "Permisos guardados correctamente.")
-                : new Resultado(false, "Error al guardar los permisos.");
+                ? new Resultado(true, "Familia enlazada al usuario.")
+                : new Resultado(false, "Error al enlazar la familia con el usuario.");
+        }
+
+        public Resultado EliminarPermisosDeUsuario(int idUsuario)
+        {
+            bool ok = _dao.ActualizarTipoPermiso(idUsuario, null);
+            return ok
+                ? new Resultado(true, "Permisos eliminados del usuario.")
+                : new Resultado(false, "Error al eliminar los permisos del usuario.");
         }
 
         public GrupoPermiso ObtenerArbol()
@@ -146,23 +133,22 @@ namespace BLL
             return raiz;
         }
 
-        private string ObtenerNombreFamiliaPrincipal(GrupoPermiso raiz)
-        {
-            var hijos = raiz.Hijos();
-            if (hijos.Count > 0) return hijos[0].Nombre;
-            return null;
-        }
-
         public Resultado AgregarFamilia(string nombre, string padreNombre)
         {
             if (string.IsNullOrWhiteSpace(nombre))
                 return new Resultado(false, "El nombre no puede estar vacio.");
-            if (nombre.Contains("|"))
-                return new Resultado(false, "El nombre no puede contener el caracter '|'.");
             var raiz = ObtenerArbol();
-            var padre = padreNombre == raiz.Nombre ? raiz : BuscarGrupo(raiz, padreNombre);
-            if (padre == null)
-                return new Resultado(false, "No se encontro el grupo padre.");
+
+            GrupoPermiso padre;
+            if (string.IsNullOrWhiteSpace(padreNombre) || padreNombre == raiz.Nombre)
+                padre = raiz;
+            else
+            {
+                padre = BuscarGrupo(raiz, padreNombre);
+                if (padre == null)
+                    return new Resultado(false, "No se encontro el grupo padre.");
+            }
+
             padre.Agregar(new GrupoPermiso(nombre));
             return new Resultado(true, "Familia agregada.");
         }
@@ -171,13 +157,15 @@ namespace BLL
         {
             if (string.IsNullOrWhiteSpace(nombre))
                 return new Resultado(false, "El nombre no puede estar vacio.");
-            if (nombre.Contains("|"))
-                return new Resultado(false, "El nombre no puede contener el caracter '|'.");
             var raiz = ObtenerArbol();
-            while (EliminarDeGrupo(raiz, nombre)) { }
             var padre = padreNombre == raiz.Nombre ? raiz : BuscarGrupo(raiz, padreNombre);
             if (padre == null)
                 return new Resultado(false, "No se encontro el grupo padre.");
+
+            bool yaEnlazado = padre.Hijos().Exists(h => h.Nombre == nombre);
+            if (yaEnlazado)
+                return new Resultado(false, "El pariente ya esta enlazado a esa familia.");
+
             padre.Agregar(new PermisoLeaf(nombre));
             _parientesDisponibles.Remove(nombre);
             return new Resultado(true, "Pariente enlazado.");
@@ -238,8 +226,6 @@ namespace BLL
         {
             if (string.IsNullOrWhiteSpace(nombre))
                 return new Resultado(false, "El nombre no puede estar vacio.");
-            if (nombre.Contains("|"))
-                return new Resultado(false, "El nombre no puede contener el caracter '|'.");
             if (_parientesDisponibles.Contains(nombre))
                 return new Resultado(false, "Ya existe un pariente con ese nombre.");
             _parientesDisponibles.Add(nombre);

@@ -23,6 +23,8 @@ namespace UI
         private Button       btnGuardarTrad;
         private Button       btnCerrar;
 
+        private Label         lblAlertaManipulacion;
+
         public FormIdiomas()
         {
             ConstruirUI();
@@ -33,9 +35,9 @@ namespace UI
         private void ConstruirUI()
         {
             this.Text          = "Gestión de Idiomas";
-            this.Size          = new Size(780, 580);
+            this.Size          = new Size(780, 640);
             this.StartPosition = FormStartPosition.CenterParent;
-            this.MinimumSize   = new Size(700, 520);
+            this.MinimumSize   = new Size(700, 580);
             this.Font          = new Font("Segoe UI", 9);
             this.BackColor     = Color.FromArgb(245, 246, 250);
 
@@ -48,7 +50,6 @@ namespace UI
                 AutoSize  = true
             };
 
-            // ── Grilla de idiomas ──────────────────────────────────────
             gridIdiomas = new DataGridView
             {
                 Location              = new Point(20, 55),
@@ -66,31 +67,30 @@ namespace UI
             gridIdiomas.SelectionChanged += GridIdiomas_SelectionChanged;
             gridIdiomas.Columns.Add(new DataGridViewTextBoxColumn { Name = "ColId",     HeaderText = "ID",     Width = 50 });
             gridIdiomas.Columns.Add(new DataGridViewTextBoxColumn { Name = "ColNombre", HeaderText = "Idioma" });
+            gridIdiomas.Columns.Add(new DataGridViewTextBoxColumn { Name = "ColCodigo", HeaderText = "Código", Width = 80 });
 
-            // ── Nuevo idioma ───────────────────────────────────────────
             lblNuevoIdioma = new Label
             {
                 Text      = "Nuevo idioma:",
-                Location  = new Point(20, 268),
+                Location  = new Point(20, 292),
                 Size      = new Size(110, 22),
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
             txtNuevoIdioma = new TextBox
             {
-                Location = new Point(135, 266),
-                Size     = new Size(180, 24)
+                Location = new Point(20, 314),
+                Size     = new Size(220, 24)
             };
 
-            btnAgregar   = CrearBoton("Agregar idioma", new Point(325, 265), 130, Color.FromArgb(46, 125, 50));
-            btnRenombrar = CrearBoton("Renombrar",      new Point(20,  305), 130, Color.FromArgb(25, 118, 210));
-            btnEliminar  = CrearBoton("Eliminar",       new Point(165, 305), 130, Color.FromArgb(198, 40, 40));
+            btnAgregar   = CrearBoton("Agregar idioma", new Point(250, 313), 130, Color.FromArgb(46, 125, 50));
+            btnRenombrar = CrearBoton("Renombrar",      new Point(20,  355), 130, Color.FromArgb(25, 118, 210));
+            btnEliminar  = CrearBoton("Eliminar",       new Point(165, 355), 130, Color.FromArgb(198, 40, 40));
 
             btnAgregar.Click   += BtnAgregar_Click;
             btnRenombrar.Click += BtnRenombrar_Click;
             btnEliminar.Click  += BtnEliminar_Click;
 
-            // ── GroupBox Traducciones ──────────────────────────────────
             grpTraducciones = new GroupBox
             {
                 Text      = "Traducciones del idioma seleccionado",
@@ -121,8 +121,17 @@ namespace UI
             grpTraducciones.Controls.Add(gridTraducciones);
             grpTraducciones.Controls.Add(btnGuardarTrad);
 
-            // ── Cerrar ─────────────────────────────────────────────────
-            btnCerrar        = CrearBoton("Cerrar", new Point(640, 500), 110, Color.FromArgb(80, 80, 80));
+            lblAlertaManipulacion = new Label
+            {
+                Text      = "",
+                Location  = new Point(20, 400),
+                Size      = new Size(360, 60),
+                ForeColor = Color.FromArgb(180, 30, 30),
+                Font      = new Font("Segoe UI", 9, FontStyle.Bold),
+                Visible   = false
+            };
+
+            btnCerrar        = CrearBoton("Cerrar", new Point(640, 560), 110, Color.FromArgb(80, 80, 80));
             btnCerrar.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnCerrar.Click += (s, e) => this.Close();
 
@@ -131,7 +140,7 @@ namespace UI
                 lblTitulo, gridIdiomas,
                 lblNuevoIdioma, txtNuevoIdioma, btnAgregar,
                 btnRenombrar, btnEliminar,
-                grpTraducciones, btnCerrar
+                grpTraducciones, lblAlertaManipulacion, btnCerrar
             });
         }
 
@@ -150,13 +159,31 @@ namespace UI
             };
         }
 
-        // ── Lógica ────────────────────────────────────────────────────
-
         private void CargarGrillaIdiomas()
         {
             gridIdiomas.Rows.Clear();
+            bool huboManipulacion = false;
+
             foreach (var id in _gestor.ObtenerIdiomas())
-                gridIdiomas.Rows.Add(id.Id, id.Nombre);
+            {
+                int fila = gridIdiomas.Rows.Add(id.Id, id.Nombre, id.Codigo);
+
+                bool codigoOk = !string.IsNullOrEmpty(id.Codigo) && DigitoVerificador.Validar(id.Codigo);
+                if (!codigoOk)
+                {
+                    gridIdiomas.Rows[fila].DefaultCellStyle.BackColor = Color.FromArgb(255, 205, 205);
+                    gridIdiomas.Rows[fila].DefaultCellStyle.ForeColor = Color.FromArgb(140, 0, 0);
+                    huboManipulacion = true;
+                    Bitacora.Instancia.Error("IDIOMA",
+                        "El codigo del idioma '" + id.Nombre + "' (Id " + id.Id + ") no coincide con su digito verificador. Posible manipulacion directa de la base de datos.");
+                }
+            }
+
+            lblAlertaManipulacion.Visible = huboManipulacion;
+            lblAlertaManipulacion.Text = huboManipulacion
+                ? "⚠ Se detectó un código de idioma alterado directamente en la base\n(fila marcada en rojo). Quedó registrado en la Bitácora."
+                : "";
+
             gridTraducciones.Rows.Clear();
         }
 
@@ -167,7 +194,8 @@ namespace UI
             return new Idioma
             {
                 Id     = (int)fila.Cells["ColId"].Value,
-                Nombre = fila.Cells["ColNombre"].Value.ToString()
+                Nombre = fila.Cells["ColNombre"].Value.ToString(),
+                Codigo = fila.Cells["ColCodigo"].Value != null ? fila.Cells["ColCodigo"].Value.ToString() : null
             };
         }
 
@@ -254,8 +282,6 @@ namespace UI
                 _gestor.CambiarIdioma(_gestor.IdiomaActual.Id);
         }
 
-        // ── Helper: InputBox propio (reemplaza Microsoft.VisualBasic) ─
-
         private static string PedirTexto(string pregunta, string valorInicial = "")
         {
             string resultado = null;
@@ -285,8 +311,6 @@ namespace UI
 
         private static void Aviso(string msg) =>
             MessageBox.Show(msg, "Atención", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-        // ── Observer ───────────────────────────────────────────────────
 
         public void ActualizarIdioma()
         {

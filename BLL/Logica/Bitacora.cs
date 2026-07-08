@@ -3,18 +3,13 @@ using System.IO;
 
 namespace BLL
 {
-    /// <summary>
-    /// Singleton que maneja el archivo de log de la sesion actual.
-    /// Formato de cada linea:
-    ///   [yyyy-MM-dd] [HH:mm:ss] [USUARIO      ] [NIVEL] [CATEGORIA  ] Mensaje
-    /// </summary>
+
     public class Bitacora
     {
         private static Bitacora _instancia;
         private string _rutaArchivo;
         private static readonly object _lock = new object();
 
-        // Usuario actualmente logueado (se actualiza al login/logout)
         private string _usuarioActual = "sistema";
 
         private Bitacora()
@@ -43,7 +38,6 @@ namespace BLL
             }
         }
 
-        // ── Escritura ──────────────────────────────────────────────────
         private void EscribirLinea(string texto)
         {
             lock (_lock)
@@ -65,7 +59,6 @@ namespace BLL
             EscribirLinea(linea);
         }
 
-        // ── Control del usuario activo ─────────────────────────────────
         public void EstablecerUsuario(string usuario)
         {
             _usuarioActual = string.IsNullOrWhiteSpace(usuario) ? "sistema" : usuario;
@@ -76,7 +69,6 @@ namespace BLL
             _usuarioActual = "sistema";
         }
 
-        // ── Metodos publicos ───────────────────────────────────────────
         public void Info(string categoria, string mensaje)
             => Registrar("INFO", categoria, mensaje);
 
@@ -86,7 +78,6 @@ namespace BLL
         public void Advertencia(string categoria, string mensaje)
             => Registrar("WARN", categoria, mensaje);
 
-        // ── Eventos especificos ────────────────────────────────────────
         public void LoginExitoso(string usuario)
         {
             EstablecerUsuario(usuario);

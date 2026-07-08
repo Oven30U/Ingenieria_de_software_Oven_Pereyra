@@ -55,7 +55,6 @@ namespace UI
             this.Font            = new Font("Segoe UI", 9);
             this.BackColor       = Color.FromArgb(245, 246, 250);
 
-            // Título
             lblTitulo           = new Label();
             lblTitulo.Text      = "Bitacora del Sistema";
             lblTitulo.Font      = new Font("Segoe UI", 14, FontStyle.Bold);
@@ -63,7 +62,6 @@ namespace UI
             lblTitulo.Location  = new Point(16, 12);
             lblTitulo.AutoSize  = true;
 
-            // ── Fila 1 de filtros: Buscar + Usuario + Nivel ────────────
             lblBuscar          = new Label();
             lblBuscar.Text     = "Buscar:";
             lblBuscar.Location = new Point(16, 52);
@@ -99,7 +97,6 @@ namespace UI
             cmbNivel.Items.AddRange(new object[] { "Todos", "INFO", "WARN", "ERROR" });
             cmbNivel.SelectedIndex = 0;
 
-            // ── Fila 2 de filtros: Fechas ──────────────────────────────
             lblFechaDesde          = new Label();
             lblFechaDesde.Text     = "Desde:";
             lblFechaDesde.Location = new Point(16, 84);
@@ -124,7 +121,6 @@ namespace UI
             dtpHasta.Size     = new Size(120, 24);
             dtpHasta.Value    = DateTime.Today;
 
-            // Botones
             btnFiltrar   = CrearBoton("Filtrar",   new Point(390, 82), 80,  Color.FromArgb(25, 118, 210));
             btnLimpiar   = CrearBoton("Limpiar",   new Point(478, 82), 80,  Color.FromArgb(100, 100, 100));
             btnExportar  = CrearBoton("Exportar",  new Point(566, 82), 90,  Color.FromArgb(46, 125, 50));
@@ -136,7 +132,6 @@ namespace UI
             btnCerrar.Click   += (s, e) => this.Close();
             btnCerrar.Anchor   = AnchorStyles.Bottom | AnchorStyles.Right;
 
-            // Grilla
             grid                       = new DataGridView();
             grid.Location              = new Point(16, 118);
             grid.Size                  = new Size(1018, 450);
@@ -193,7 +188,6 @@ namespace UI
             return btn;
         }
 
-        // ── Carga de logs ──────────────────────────────────────────────
         private void CargarLogs()
         {
             _todos.Clear();
@@ -229,7 +223,6 @@ namespace UI
                 catch { }
             }
 
-            // Llenar combo usuarios
             cmbUsuario.Items.Clear();
             foreach (var u in usuarios)
                 cmbUsuario.Items.Add(u);
@@ -238,7 +231,6 @@ namespace UI
             AplicarFiltro();
         }
 
-        // Parsea: [yyyy-MM-dd] [HH:mm:ss] [USUARIO        ] [NIVEL] [CATEGORIA  ] Mensaje
         private static EntradaLog ParsearLinea(string linea)
         {
             if (string.IsNullOrWhiteSpace(linea) || !linea.StartsWith("[")) return null;
@@ -281,34 +273,30 @@ namespace UI
             return linea.Substring(inicio + 1, fin - inicio - 1);
         }
 
-        // ── Filtrado ───────────────────────────────────────────────────
         private void AplicarFiltro()
         {
             string buscar  = txtBuscar.Text.Trim().ToLower();
             string usuario = cmbUsuario.SelectedIndex > 0 ? cmbUsuario.SelectedItem.ToString().Trim() : "";
             string nivel   = cmbNivel.SelectedIndex  > 0 ? cmbNivel.SelectedItem.ToString()           : "";
             DateTime desde = dtpDesde.Value.Date;
-            DateTime hasta = dtpHasta.Value.Date.AddDays(1).AddSeconds(-1); // fin del dia
+            DateTime hasta = dtpHasta.Value.Date.AddDays(1).AddSeconds(-1);
 
             grid.Rows.Clear();
             int count = 0;
 
             foreach (var e in _todos)
             {
-                // Filtro fecha
+
                 if (e.FechaHora != DateTime.MinValue)
                 {
                     if (e.FechaHora < desde || e.FechaHora > hasta) continue;
                 }
 
-                // Filtro usuario
                 if (!string.IsNullOrEmpty(usuario) &&
                     !e.Usuario.Equals(usuario, StringComparison.OrdinalIgnoreCase)) continue;
 
-                // Filtro nivel
                 if (!string.IsNullOrEmpty(nivel) && e.Nivel != nivel) continue;
 
-                // Filtro texto libre
                 if (!string.IsNullOrEmpty(buscar))
                 {
                     bool match = e.Mensaje.ToLower().Contains(buscar)
@@ -336,7 +324,6 @@ namespace UI
             AplicarFiltro();
         }
 
-        // ── Colores por nivel ──────────────────────────────────────────
         private void Grid_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0 || e.RowIndex >= grid.Rows.Count) return;
@@ -361,7 +348,6 @@ namespace UI
             }
         }
 
-        // ── Exportar ───────────────────────────────────────────────────
         private void BtnExportar_Click(object sender, EventArgs e)
         {
             var dlg      = new SaveFileDialog();

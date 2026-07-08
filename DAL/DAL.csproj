@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Datos\UsuarioDAL.cs" />
+    <Compile Include="Datos\PermisoDAL.cs" />
     <Compile Include="IdiomaDAL.cs" />
   </ItemGroup>
   <ItemGroup>
